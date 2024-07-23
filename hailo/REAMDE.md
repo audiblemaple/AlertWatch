@@ -4,3 +4,8 @@
 3. [Test](3.testing) the quantized models accuracy
 4. [Compile](4.compilation) the .har file to a .hef (Hailo executable) file
 5. [Validate](5.validation) by running the compiled .hef model on the Hailo hardware
+
+### Known issues
+* The facial landmarks are not scaled / offset correctly in the validation step. 
+
+Readme will be updated with the progress of the project
