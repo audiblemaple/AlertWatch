@@ -1,0 +1,41 @@
+2024-07-22 21:23:15,277 - INFO - hailo_tools_runner.py:504 - To achieve optimal performance, set the compiler_optimization_level to "max" by adding performance_param(compiler_optimization_level=max) to the model script. Note that this may increase compilation time.
+2024-07-22 21:25:00,435 - INFO - client_runner.py:1831 - Saved HAR to: /home/bedrock/Desktop/work/compilation/face_landmarks_trained_compiled_model.har
+2024-07-22 21:25:03,364 - INFO - main.py:34 - Current Time: 21:25:03, 07/22/24
+2024-07-22 21:25:04,375 - INFO - main.py:46 - CPU: Architecture: x86_64, Model: AMD Ryzen 7 7840U w/ Radeon 780M Graphics, Number Of Cores: 16, Utilization: 0.1%
+2024-07-22 21:25:04,375 - INFO - main.py:50 - Memory: Total: 30GB, Available: 26GB
+2024-07-22 21:25:04,375 - INFO - main.py:54 - System info: OS: Linux, Kernel: 6.5.0-44-generic
+2024-07-22 21:25:04,375 - INFO - main.py:55 - Hailo DFC Version: 3.28.0
+2024-07-22 21:25:04,375 - INFO - main.py:60 - HailoRT Version: 4.18.0
+2024-07-22 21:25:04,389 - INFO - main.py:101 - PCIe: 0000:03:00.0: Number Of Lanes: 4, Speed: 8.0 GT/s PCIe
+2024-07-22 21:25:04,389 - INFO - main.py:109 - Running `hailo profiler face_landmarks_trained_compiled_model.har`
+2024-07-22 21:25:05,135 - INFO - client_runner.py:1441 - Running profile for face_landmarks_trained in state compiled_model
+2024-07-22 21:25:05,390 - INFO - estimator.py:1858 - 
+Model Details
+--------------------------------  ----------
+Input Tensors Shapes              224x224x1
+Operations per Input Tensor       3.47 GOPs
+Operations per Input Tensor       1.74 GMACs
+Pure Operations per Input Tensor  3.47 GOPs
+Pure Operations per Input Tensor  1.74 GMACs
+Model Parameters                  12.50 M
+--------------------------------  ----------
+
+Profiler Input Settings
+-----------------  -----------------
+Optimization Goal  Reach Highest FPS
+Profiler Mode      Compiled
+-----------------  -----------------
+
+Performance Summary
+----------------------  --------------------
+Number of Devices       1
+Number of Contexts      1
+Throughput              2670.82 FPS
+Latency                 1.07 ms
+Operations per Second   9267.76 GOP/s
+MACs per Second         4640.51 GMAC/s
+Total Input Bandwidth   127.80 Megabytes/sec
+Total Output Bandwidth  354.72 Kilobytes/sec
+Context Switch Configs  N/A
+----------------------  --------------------
+2024-07-22 21:25:05,423 - INFO - profiler.py:71 - Saved Profiler HTML Report to: /home/bedrock/Desktop/work/compilation/face_landmarks_trained_compiled_model.html

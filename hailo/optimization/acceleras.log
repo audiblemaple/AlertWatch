@@ -1,0 +1,25 @@
+2024-07-22 20:55:58,692 - WARNING - mo_config.py:161 - Reducing optimization level to 0 (the accuracy won't be optimized and compression won't be used) because there's less data than the recommended amount (1024), and there's no available GPU
+2024-07-22 20:55:58,692 - WARNING - mo_config.py:226 - Running model optimization with zero level of optimization is not recommended for production use and might lead to suboptimal accuracy results
+2024-07-22 20:55:58,693 - INFO - mo_script_parser.py:82 - Model received quantization params from the hn
+2024-07-22 20:55:59,443 - INFO - algorithm_base.py:144 - Starting Mixed Precision
+2024-07-22 20:55:59,541 - INFO - algorithm_base.py:160 - Mixed Precision is done (completion time is 00:00:00.10)
+2024-07-22 20:55:59,739 - INFO - algorithm_base.py:141 - Layer Norm Decomposition skipped
+2024-07-22 20:55:59,898 - INFO - algorithm_base.py:144 - Starting Stats Collector
+2024-07-22 20:55:59,901 - INFO - stats_collection.py:73 - Using dataset with 64 entries for calibration
+2024-07-22 20:56:04,515 - INFO - algorithm_base.py:160 - Stats Collector is done (completion time is 00:00:04.61)
+2024-07-22 20:56:04,925 - INFO - algorithm_base.py:144 - Starting Fix zp_comp Encoding
+2024-07-22 20:56:04,925 - INFO - algorithm_base.py:160 - Fix zp_comp Encoding is done (completion time is 00:00:00.00)
+2024-07-22 20:56:04,925 - INFO - algorithm_base.py:141 - matmul_equalization skipped
+2024-07-22 20:56:05,162 - INFO - conv_stripped_op.py:513 - No shifts available for layer face_landmarks_trained/conv13/conv_op, using max shift instead. delta=0.2270
+2024-07-22 20:56:05,196 - INFO - conv_stripped_op.py:513 - No shifts available for layer face_landmarks_trained/conv13/conv_op, using max shift instead. delta=0.1135
+2024-07-22 20:56:05,359 - INFO - conv_stripped_op.py:513 - No shifts available for layer face_landmarks_trained/conv18/conv_op, using max shift instead. delta=1.1219
+2024-07-22 20:56:05,426 - INFO - conv_stripped_op.py:513 - No shifts available for layer face_landmarks_trained/conv18/conv_op, using max shift instead. delta=0.5610
+2024-07-22 20:56:05,569 - INFO - conv_stripped_op.py:513 - No shifts available for layer face_landmarks_trained/conv20/conv_op, using max shift instead. delta=1.3241
+2024-07-22 20:56:05,621 - INFO - conv_stripped_op.py:513 - No shifts available for layer face_landmarks_trained/conv20/conv_op, using max shift instead. delta=0.6621
+2024-07-22 20:56:05,709 - INFO - conv_stripped_op.py:513 - No shifts available for layer face_landmarks_trained/conv18/conv_op, using max shift instead. delta=0.5610
+2024-07-22 20:56:06,818 - INFO - algorithm_base.py:141 - Finetune encoding skipped
+2024-07-22 20:56:06,819 - INFO - algorithm_base.py:141 - Bias Correction skipped
+2024-07-22 20:56:06,821 - INFO - algorithm_base.py:141 - Adaround skipped
+2024-07-22 20:56:06,822 - INFO - algorithm_base.py:141 - Fine Tune skipped
+2024-07-22 20:56:07,848 - INFO - algorithm_base.py:141 - Layer Noise Analysis skipped
+2024-07-22 20:56:07,890 - WARNING - quant_checker.py:175 - The expected calibration set should be [0, 255] when using an in-net normalization layer, but the range received is [(0.0, 1.0)].
