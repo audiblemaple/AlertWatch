@@ -22,7 +22,7 @@ else:
     weights_path = '../../models/face_landmarks_epoch_1412.pth'
     num_classes = 24
 
-frontal_face_cascade_path = '../../haarcascades/haarcascade_frontalface_default.xml'
+frontal_face_cascade_path = '../../../haarcascades/haarcascade_frontalface_default.xml'
 
 
 #######################################################################

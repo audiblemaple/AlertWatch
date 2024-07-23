@@ -21,7 +21,7 @@ class Network(nn.Module):
 
 # Paths to the model weights and Haar cascade file
 weights_path = '../../models/face_landmarks_epoch_1412.pth'
-frontal_face_cascade_path = '../../haarcascades/haarcascade_frontalface_alt.xml'
+frontal_face_cascade_path = '../../../haarcascades/haarcascade_frontalface_alt.xml'
 
 # Load the model
 best_network = Network()

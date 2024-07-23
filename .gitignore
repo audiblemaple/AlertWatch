@@ -1,6 +1,7 @@
-resnet/ibug_300W_large_face_landmark_dataset
+ibug_300W_large_face_landmark_dataset
 face_detection
 *.har
 *.hef
 *.npy
 *.pth
+*.log

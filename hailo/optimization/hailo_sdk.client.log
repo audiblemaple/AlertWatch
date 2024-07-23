@@ -1,4 +1,0 @@
-2024-07-22 20:55:58,386 - INFO - client_runner.py:479 - Loading model script commands to face_landmarks_trained from string
-2024-07-22 20:55:58,548 - IMPORTANT - sdk_backend.py:1009 - Starting Model Optimization
-2024-07-22 20:56:08,346 - IMPORTANT - sdk_backend.py:1050 - Model Optimization is done
-2024-07-22 20:56:08,788 - INFO - client_runner.py:1831 - Saved HAR to: /home/bedrock/Desktop/work/optimization/face_landmarks_trained_quantized_model.har

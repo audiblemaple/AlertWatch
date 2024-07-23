@@ -114,14 +114,14 @@ class Transforms():
 class EyeLandmarksDataset(Dataset):
 
     def __init__(self, transform=None):
-        tree = ET.parse('../../../ibug_300W_large_face_landmark_dataset/labels_ibug_300W_train.xml')
+        tree = ET.parse('../../../../ibug_300W_large_face_landmark_dataset/labels_ibug_300W_train.xml')
         root = tree.getroot()
 
         self.image_filenames = []
         self.landmarks = []
         self.crops = []
         self.transform = transform
-        self.root_dir = '../../../ibug_300W_large_face_landmark_dataset'
+        self.root_dir = '../../../../ibug_300W_large_face_landmark_dataset'
 
         for filename in root[2]:
             self.image_filenames.append(os.path.join(self.root_dir, filename.attrib['file']))

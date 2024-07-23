@@ -9,7 +9,7 @@ onnx_path = 'eye_landmarks.onnx'
 ort_session = ort.InferenceSession(onnx_path)
 
 # Load Haar Cascade for face detection
-frontal_face_cascade_path = '../../haarcascades/haarcascade_frontalface_default.xml'
+frontal_face_cascade_path = '../../../haarcascades/haarcascade_frontalface_default.xml'
 face_cascade = cv2.CascadeClassifier(frontal_face_cascade_path)
 
 # Start video capture

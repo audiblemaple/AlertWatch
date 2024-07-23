@@ -9,7 +9,7 @@ quantized_har_file = f'{model_name}_quantized_model.har'
 runner = ClientRunner(har=quantized_har_file)
 
 # Specify the path to the Haar Cascade file directly
-haar_cascade_path = '../haarcascades/haarcascade_frontalface_alt.xml'
+haar_cascade_path = '../../haarcascades/haarcascade_frontalface_alt.xml'
 face_cascade = cv2.CascadeClassifier(haar_cascade_path)
 
 # Check if the cascade file loaded correctly
