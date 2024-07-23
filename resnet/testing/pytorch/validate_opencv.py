@@ -20,7 +20,7 @@ class Network(nn.Module):
 
 
 # Paths to the model weights and Haar cascade file
-weights_path = '../weights_200_epochs/face_landmarks_epoch_108.pth'
+weights_path = '../../models/face_landmarks_epoch_1412.pth'
 frontal_face_cascade_path = '../../haarcascades/haarcascade_frontalface_alt.xml'
 
 # Load the model

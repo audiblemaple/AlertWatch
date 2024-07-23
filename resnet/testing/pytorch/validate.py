@@ -9,19 +9,17 @@ from torchvision import models
 import torchvision.transforms.functional as TF
 
 #######################################################################
-# image_path = 'pic.png'
-image_path = '../pics/driving_4.jpg'
-# image_path = 'pic2.jpg'
+image_path = '../../pics/pic.jpg'
 
-face = False
-# face = True
+# face = False
+face = True
 
 if face:
-    weights_path = 'weights_2000_epochs/face_landmarks_epoch_61.pth'
+    weights_path = '../../models/face_landmarks_epoch_1412.pth'
     num_classes = 136
 
 else:
-    weights_path = '../../weights_2000_epochs/eyes_landmarks_epoch_216.pth'
+    weights_path = '../../models/face_landmarks_epoch_1412.pth'
     num_classes = 24
 
 frontal_face_cascade_path = '../../haarcascades/haarcascade_frontalface_default.xml'
