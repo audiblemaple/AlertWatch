@@ -1,64 +1,19 @@
 import os
 import time
-import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-import xml.etree.ElementTree as ET
-import sys
-import torch
 import torch.nn as nn
 import torch.optim as optim
-from torchvision import datasets, models, transforms
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset
 
 from face_landmarks_detection.training.utils.transforms import Transforms
 from face_landmarks_detection.training.utils.network import Network
-class EyeLandmarksDataset(Dataset):
-    def __init__(self, transform=None):
-        tree = ET.parse('../../../../ibug_300W_large_face_landmark_dataset/labels_ibug_300W_train.xml')
-        root = tree.getroot()
-
-        self.image_filenames = []
-        self.landmarks = []
-        self.crops = []
-        self.transform = transform
-        self.root_dir = '../../../../ibug_300W_large_face_landmark_dataset'
-
-        for filename in root[2]:
-            self.image_filenames.append(os.path.join(self.root_dir, filename.attrib['file']))
-
-            self.crops.append(filename[0].attrib)
-
-            landmark = []
-            for num in range(68):
-                x_coordinate = int(filename[0][num].attrib['x'])
-                y_coordinate = int(filename[0][num].attrib['y'])
-                landmark.append([x_coordinate, y_coordinate])
-            self.landmarks.append(landmark)
-
-        self.landmarks = np.array(self.landmarks).astype('float32')
-
-        assert len(self.image_filenames) == len(self.landmarks)
-
-    def __len__(self):
-        return len(self.image_filenames)
-
-    def __getitem__(self, index):
-        image = cv2.imread(self.image_filenames[index], 0)
-        landmarks = self.landmarks[index]
-        eye_landmarks = landmarks[36:48]  # Only use eye landmarks (index 36-47)
-
-        if self.transform:
-            image, eye_landmarks = self.transform(image, eye_landmarks, self.crops[index])
-
-        eye_landmarks = eye_landmarks - 0.5
-
-        return image, eye_landmarks
-
+from face_landmarks_detection.training.utils.utils import *
 
 if __name__ == "__main__":
-    dataset = EyeLandmarksDataset(Transforms())
+    dataset = LandmarksDataset(mode="eyes", transform=Transforms())
 
+    # Split the dataset into testing and test sets
     len_valid_set = int(0.1 * len(dataset))
     len_train_set = len(dataset) - len_valid_set
 
@@ -67,20 +22,9 @@ if __name__ == "__main__":
 
     train_dataset, valid_dataset = torch.utils.data.random_split(dataset, [len_train_set, len_valid_set])
 
+    # Shuffle and batch the datasets
     train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True, num_workers=4, pin_memory=True)
     valid_loader = DataLoader(valid_dataset, batch_size=8, shuffle=True, num_workers=4, pin_memory=True)
-
-
-
-
-    def print_overwrite(step, total_step, loss, operation):
-        sys.stdout.write('\r')
-        if operation == 'train':
-            sys.stdout.write("Train Steps: %d/%d  Loss: %.6f " % (step, total_step, loss))
-        else:
-            sys.stdout.write("Valid Steps: %d/%d  Loss: %.6f " % (step, total_step, loss))
-
-        sys.stdout.flush()
 
 
     # Set device to CUDA if available
@@ -144,9 +88,7 @@ if __name__ == "__main__":
         loss_train /= len(train_loader)
         loss_valid /= len(valid_loader)
 
-        print('\n--------------------------------------------------')
-        print(f'Epoch: {epoch}  Train Loss: {loss_train:.6f}  Valid Loss: {loss_valid:.6f}')
-        print('--------------------------------------------------')
+        print_epoch_result(epoch, loss_train, loss_valid)
 
         # Save model with the specified format
         model_save_path = f'output/eyes_landmarks_epoch_{epoch}.pth'

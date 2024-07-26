@@ -15,11 +15,11 @@ image_path = '../../pics/pic.jpg'
 face = True
 
 if face:
-    weights_path = '../../models/face_landmarks_epoch_1412.pth'
+    weights_path = '../../models/face/face_landmarks_epoch_1412.pth'
     num_classes = 136
 
 else:
-    weights_path = '../../models/face_landmarks_epoch_1412.pth'
+    weights_path = '../../models/face/face_landmarks_epoch_1412.pth'
     num_classes = 24
 
 frontal_face_cascade_path = '../../../haarcascades/haarcascade_frontalface_default.xml'
