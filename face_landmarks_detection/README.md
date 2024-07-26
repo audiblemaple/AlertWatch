@@ -27,7 +27,6 @@ To run the code, you need the following dependencies:
 - matplotlib
 
 You can install the required packages using:
-
 ``` bash
 pip install torch torchvision opencv-python pillow numpy imutils matplotlib
 ```
@@ -35,13 +34,20 @@ pip install torch torchvision opencv-python pillow numpy imutils matplotlib
 ## Dataset
 The dataset used for training is the iBUG 300-W dataset, which contains annotated images with 68 facial landmarks. The dataset should be organized as follows:
 
-```bash
-ibug_300W_large_face_landmark_dataset/ \
-|-- images/ \
-|   |-- image1.jpg \
-|   |-- image2.jpg \
-|   ... \
-|-- labels_ibug_300W_train.xml
+``` bash
+ibug_300W_large_face_landmark_dataset
+├───afw
+├───helen
+│   ├───testset
+│   └───trainset
+├───ibug
+├───lfpw
+│   ├───testset
+│   └───trainset
+├───image_metadata_stylesheet.xsl
+├───labels_ibug_300W.xml
+├───labels_ibug_300W_test.xml
+└───labels_ibug_300W_train.xml
 ```
 
 ## Transformations
@@ -54,13 +60,12 @@ Brightness adjustment
 Adding Gaussian noise
 Rotation
 
-
 ## Model Architecture
-The model is based on the ResNet-18 architecture, modified to accept grayscale images as input and to output 136 values (68 landmarks with x and y coordinates).
+The model is based on the ResNet-18 architecture, modified to accept grayscale images as input and to output 136 values (face) or 24 values (eyes) (landmarks with x and y coordinates).
 
-```
+``` python
 class Network(nn.Module):
-    def __init__(self, num_classes=136):
+    def __init__(self, num_classes= 136 / 28):
         super().__init__()
         self.model = models.resnet18()
         self.model.conv1 = nn.Conv2d(1, 64, kernel_size=7, stride=2, padding=3, bias=False)
