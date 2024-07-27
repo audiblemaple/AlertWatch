@@ -26,10 +26,11 @@ To run the code, you need the following dependencies:
 - imutils
 - matplotlib
 
-You can install the required packages using:
+You can install the required packages for cpu training using:
 ``` bash
 pip install torch torchvision opencv-python pillow numpy imutils matplotlib
 ```
+You can [download PyTorch for your platform here](https://pytorch.org/get-started/locally/)
 
 ## Dataset
 The dataset used for training is the iBUG 300-W dataset, which contains annotated images with 68 facial landmarks. The dataset should be organized as follows:

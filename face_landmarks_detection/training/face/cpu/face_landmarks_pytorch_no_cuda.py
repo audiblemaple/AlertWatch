@@ -4,11 +4,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import Dataset
 
-from face_landmarks_detection.training.utils.transforms import Transforms
-from face_landmarks_detection.training.utils.network import Network
-from face_landmarks_detection.training.utils.utils import *
+from face_landmarks_detection.utils.transforms import Transforms
+from face_landmarks_detection.utils.network import Network
+from face_landmarks_detection.utils.utils import *
 
 if __name__ == "__main__":
     dataset = LandmarksDataset(mode="face", transform=Transforms())

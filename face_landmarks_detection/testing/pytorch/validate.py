@@ -4,45 +4,28 @@ import matplotlib.pyplot as plt
 from PIL import Image
 
 import torch
-import torch.nn as nn
-from torchvision import models
-import torchvision.transforms.functional as TF
+import torchvision.transforms.functional as transforms_functional
+from face_landmarks_detection.utils.network import Network
 
-#######################################################################
+
 image_path = '../../pics/pic.jpg'
 
 # face = False
 face = True
 
 if face:
-    weights_path = '../../models/face/face_landmarks_epoch_1412.pth'
+    weights_path = '../../models/face/face_landmarks_epoch_3559.pth'
     num_classes = 136
 
 else:
-    weights_path = '../../models/face/face_landmarks_epoch_1412.pth'
+    weights_path = '../../models/face/face_landmarks_epoch_3559.pth'
     num_classes = 24
 
-frontal_face_cascade_path = '../../../haarcascades/haarcascade_frontalface_default.xml'
+frontal_face_cascade_path = '../../../haarcascades/haarcascade_frontalface_alt.xml'
 
-
-#######################################################################
-class Network(nn.Module):
-    def __init__(self, num_classes=136):
-        super().__init__()
-        self.model_name = 'resnet18'
-        self.model = models.resnet18(pretrained=False)
-        self.model.conv1 = nn.Conv2d(1, 64, kernel_size=7, stride=2, padding=3, bias=False)
-        self.model.fc = nn.Linear(self.model.fc.in_features, num_classes)
-
-    def forward(self, x):
-        x = self.model(x)
-        return x
-
-
-#######################################################################
 face_cascade = cv2.CascadeClassifier(frontal_face_cascade_path)
 
-best_network = Network(num_classes)
+best_network = Network(num_classes=num_classes)
 best_network.load_state_dict(torch.load(weights_path, map_location=torch.device('cpu')))
 best_network.eval()
 
@@ -56,9 +39,9 @@ faces = face_cascade.detectMultiScale(grayscale_image, 1.1, 4)
 all_landmarks = []
 for (x, y, w, h) in faces:
     image = grayscale_image[y:y + h, x:x + w]
-    image = TF.resize(Image.fromarray(image), size=(224, 224))
-    image = TF.to_tensor(image)
-    image = TF.normalize(image, [0.5], [0.5])
+    image = transforms_functional.resize(Image.fromarray(image), size=(224, 224))
+    image = transforms_functional.to_tensor(image)
+    image = transforms_functional.normalize(image, [0.5], [0.5])
 
     with torch.no_grad():
         landmarks = best_network(image.unsqueeze(0))

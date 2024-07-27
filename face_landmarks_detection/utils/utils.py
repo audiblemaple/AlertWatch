@@ -1,7 +1,7 @@
 import sys
 import torch
 from torch.utils.data import Dataset, DataLoader
-from face_landmarks_detection.training.utils.landmarksDataSet import LandmarksDataset
+from face_landmarks_detection.utils.landmarksDataSet import LandmarksDataset
 
 
 def print_overwrite(step, total_step, loss, operation):

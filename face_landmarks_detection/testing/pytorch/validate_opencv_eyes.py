@@ -6,24 +6,15 @@ import torchvision.transforms.functional as TF
 from PIL import Image
 import numpy as np
 import time
+from face_landmarks_detection.utils.network import Network
 
-class Network(nn.Module):
-    def __init__(self, num_classes=24):  # Adjusted for eye-only model
-        super(Network, self).__init__()
-        self.model = models.resnet18(pretrained=False)
-        self.model.conv1 = nn.Conv2d(1, 64, kernel_size=7, stride=2, padding=3, bias=False)
-        self.model.fc = nn.Linear(self.model.fc.in_features, num_classes)
-
-    def forward(self, x):
-        x = self.model(x)
-        return x
 
 # Paths to the model weights and Haar cascade file
 weights_path = '../../weights_2000_epochs/eyes_landmarks_epoch_216.pth'
 frontal_face_cascade_path = '../../../haarcascades/haarcascade_frontalface_alt.xml'
 
 # Load the model
-best_network = Network()
+best_network = Network(num_classes=24)
 best_network.load_state_dict(torch.load(weights_path, map_location=torch.device('cpu')))
 best_network.eval()
 
