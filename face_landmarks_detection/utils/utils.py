@@ -2,6 +2,7 @@ import sys
 import torch
 from torch.utils.data import Dataset, DataLoader
 from face_landmarks_detection.utils.landmarksDataSet import LandmarksDataset
+import cv2
 
 
 def print_overwrite(step, total_step, loss, operation):
@@ -32,3 +33,14 @@ def create_dataloaders(train_dataset, valid_dataset, batch_size_train=64, batch_
     train_loader = DataLoader(train_dataset, batch_size=batch_size_train, shuffle=True, num_workers=num_workers)
     valid_loader = DataLoader(valid_dataset, batch_size=batch_size_valid, shuffle=True, num_workers=num_workers)
     return train_loader, valid_loader
+
+def init_cv_cap(width, height, fps):
+    if 'win' in sys.platform:
+        cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+    else:
+        cap = cv2.VideoCapture(0)
+
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+    cap.set(cv2.CAP_PROP_FPS, fps)
+    return cap

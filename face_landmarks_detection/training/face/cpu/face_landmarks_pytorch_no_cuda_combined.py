@@ -1,54 +1,109 @@
 import os
 import time
+import argparse
 import numpy as np
 import torch.nn as nn
 import torch.optim as optim
 import matplotlib.pyplot as plt
 
+from torch.utils.data import DataLoader
 from face_landmarks_detection.utils.transforms import Transforms
 from face_landmarks_detection.utils.network import Network
 from face_landmarks_detection.utils.utils import *
 
-if __name__ == "__main__":
-    dataset = LandmarksDataset(mode="face", transform=Transforms())
 
-    # Split the dataset into testing and test sets
+def main():
+    """
+    Main function for training and validating the facial landmarks detection model.
+
+    This function handles the following tasks:
+    - Parsing command-line arguments
+    - Loading and splitting the dataset
+    - Initializing the neural network model, loss function, and optimizer
+    - Training the model for a specified number of epochs
+    - Validating the model and saving checkpoints
+    - Visualizing the results
+
+    Command-line arguments:
+    -e, --epoch: Number of epochs to train the model (default: 100)
+    -m, --mode: Mode of detection, either 'face' or 'eyes' (default: face)
+    -d, --dev: Device to run the model on 'cpu', 'cuda' or 'rocm' (default: cpu)
+    -o, --out: Output directory to save the model checkpoints (default: output)
+    """
+    parser = argparse.ArgumentParser(description="Facial Landmarks Detection Training")
+    parser.add_argument("-e", "--epoch",
+                        default=100,
+                        type=int,
+                        help="Number of epochs to train the model.",
+                        required=False
+                        )
+    parser.add_argument("-m", "--mode",
+                        default="face",
+                        type=str,
+                        help="face / eyes",
+                        required=False
+                        )
+    parser.add_argument("-d", "--dev",
+                        default="cpu",
+                        type=str,
+                        help="cpu, cuda:0 or rocm-(not implemented).",
+                        required=False
+                        )
+    parser.add_argument("-o", "--out",
+                        default="output",
+                        type=str,
+                        help="Output directory to save the model checkpoints to.",
+                        required=False
+                        )
+    args = parser.parse_args()
+
+    # Load the dataset with the specified mode and transformations
+    dataset = LandmarksDataset(mode=args.mode, transform=Transforms())
+
+    # Split the dataset into training and validation sets
     len_valid_set = int(0.1 * len(dataset))
     len_train_set = len(dataset) - len_valid_set
 
-    print("The length of Train set is {}".format(len_train_set))
-    print("The length of Valid set is {}".format(len_valid_set))
+    print(f"The length of Train set is {len_train_set}")
+    print(f"The length of Valid set is {len_valid_set}")
 
     train_dataset, valid_dataset = torch.utils.data.random_split(dataset, [len_train_set, len_valid_set])
+    num_cores = os.cpu_count()
 
-    # Shuffle and batch the datasets
-    train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True, num_workers=4)
-    valid_loader = DataLoader(valid_dataset, batch_size=8, shuffle=True, num_workers=4)
+    # Create data loaders for training and validation sets
+    train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True, num_workers=num_cores)
+    valid_loader = DataLoader(valid_dataset, batch_size=8, shuffle=True, num_workers=num_cores)
 
+    # Determine the number of output classes based on the mode
+    class_num = 136 if args.mode == "face" else 24
+
+    # Enable anomaly detection for autograd
     torch.autograd.set_detect_anomaly(True)
-    network = Network(num_classes=136)
 
+    # Initialize the network, loss function, and optimizer
+    network = Network(num_classes=class_num)
     criterion = nn.MSELoss()
     optimizer = optim.Adam(network.parameters(), lr=0.0001)
 
+    # Track the minimum validation loss for saving the best model
     loss_min = np.inf
-    num_epochs = 5000
+    num_epochs = args.epoch
 
-    # Create directory if it doesn't exist
-    if not os.path.exists('output'):
-        os.makedirs('output')
+    # Create output directory if it doesn't exist
+    if not os.path.exists(args.out):
+        os.makedirs(args.out)
 
+    # Training loop
     start_time = time.time()
     for epoch in range(1, num_epochs + 1):
-
         loss_train = 0
         loss_valid = 0
         running_loss = 0
 
         network.train()
         for step, (images, landmarks) in enumerate(train_loader, 1):
-            images = images
-            landmarks = landmarks.view(landmarks.size(0), -1)
+            images = images.to(args.dev)
+            landmarks = landmarks.view(landmarks.size(0), -1).to(args.dev)
 
             predictions = network(images)
 
@@ -67,13 +122,14 @@ if __name__ == "__main__":
             loss_train += loss_train_step.item()
             running_loss = loss_train / step
 
+            # Print training progress
             print_overwrite(step, len(train_loader), running_loss, 'train')
 
         network.eval()
         with torch.no_grad():
             for step, (images, landmarks) in enumerate(valid_loader, 1):
-                images = images
-                landmarks = landmarks.view(landmarks.size(0), -1)
+                images = images.to(args.dev)
+                landmarks = landmarks.view(landmarks.size(0), -1).to(args.dev)
 
                 predictions = network(images)
 
@@ -83,15 +139,17 @@ if __name__ == "__main__":
                 loss_valid += loss_valid_step.item()
                 running_loss = loss_valid / step
 
+                # Print validation progress
                 print_overwrite(step, len(valid_loader), running_loss, 'valid')
 
         loss_train /= len(train_loader)
         loss_valid /= len(valid_loader)
 
+        # Print epoch results
         print_epoch_result(epoch, loss_train, loss_valid)
 
-        # Save model with the specified format
-        model_save_path = f'output/face_landmarks_epoch_{epoch}.pth'
+        # Save the model if it has the minimum validation loss
+        model_save_path = f'{args.out}/{args.mode}_landmarks_epoch_{epoch}.pth'
         if loss_valid < loss_min:
             loss_min = loss_valid
             torch.save(network.state_dict(), model_save_path)
@@ -105,7 +163,7 @@ if __name__ == "__main__":
     start_time = time.time()
 
     with torch.no_grad():
-        best_network = Network(num_classes=136)
+        best_network = Network(num_classes=class_num)
         best_network.load_state_dict(torch.load(model_save_path))
         best_network.eval()
 
@@ -120,15 +178,21 @@ if __name__ == "__main__":
 
         for img_num in range(8):
             plt.subplot(8, 1, img_num + 1)
-            plt.imshow(images[img_num].numpy().transpose(1, 2, 0).squeeze(), cmap='gray')
-            plt.scatter(predictions[img_num, :, 0], predictions[img_num, :, 1], c='r', s=5)
-            plt.scatter(landmarks[img_num, :, 0], landmarks[img_num, :, 1], c='g', s=5)
+            plt.imshow(images[img_num].cpu().numpy().transpose(1, 2, 0).squeeze(), cmap='gray')
+            plt.scatter(predictions[img_num, :, 0].cpu(), predictions[img_num, :, 1].cpu(), c='r', s=5)
+            plt.scatter(landmarks[img_num, :, 0].cpu(), landmarks[img_num, :, 1].cpu(), c='g', s=5)
 
     print(f'Total number of test images: {len(valid_dataset)}')
 
     end_time = time.time()
     print(f"Elapsed Time : {end_time - start_time} s")
-    print("Models checkpoints will be in the ./output directory")
+    print(f"Model checkpoints will be in the ./{args.out} directory")
+
+
+if __name__ == "__main__":
+    main()
+
+
 
 
 
