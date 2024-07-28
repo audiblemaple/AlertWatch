@@ -1,8 +1,9 @@
 import cv2
+import socket
+import struct
+import pickle
 import numpy as np
-import os
 import argparse
-import time
 from hailo_platform import HEF, VDevice, HailoStreamInterface, ConfigureParams, InferVStreams, InputVStreamParams, OutputVStreamParams, FormatType
 
 class HailoInference:
@@ -73,8 +74,14 @@ def preprocess_image(image, target_size):
 def main():
     parser = argparse.ArgumentParser(description="Facial Landmarks Detection Example")
     parser.add_argument("-n", "--net", help="Path for the HEF model.", required=True)
-    parser.add_argument("-a", "--arch", help="Hailo architecture, h8, h15h", required=False) # For future
+    parser.add_argument("-s", "--server-ip", help="IP address of the server.", required=True)
+    parser.add_argument("-p", "--port", help="Port number of the server.", type=int, required=True)
     args = parser.parse_args()
+
+    # Network settings
+    server_address = (args.server_ip, args.port)
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client_socket.connect(server_address)
 
     # Load the HEF model
     hailo_inference = HailoInference(args.net, output_type='UINT8')
@@ -92,24 +99,18 @@ def main():
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
 
-    fps_start_time = 0
-    fps = 0
-
     haar_cascade_path = '../haarcascades/haarcascade_frontalface_alt.xml'
     face_cascade = cv2.CascadeClassifier(haar_cascade_path)
     if face_cascade.empty():
         raise IOError(f"Could not load Haar cascade file from {haar_cascade_path}")
+
+    encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 90]
 
     while True:
         ret, frame = cap.read()
         if not ret:
             print("Error: Failed to capture image.")
             break
-
-        fps_end_time = time.time()
-        time_diff = fps_end_time - fps_start_time
-        fps = 1 / time_diff
-        fps_start_time = fps_end_time
 
         # Convert to grayscale
         gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -136,38 +137,16 @@ def main():
 
             all_landmarks.append(landmarks)
 
-            # Draw the detected face region
-            cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
+        result, frame = cv2.imencode('.jpg', frame, encode_param)
+        data = pickle.dumps(frame, 0)
+        size = len(data)
 
-            # Draw the preprocessed face region
-            cv2.rectangle(frame, (x + dx, y + dy), (x + dx + nw, y + dy + nh), (0, 255, 0), 2)
-
-        # Visualize the results
-        for landmarks in all_landmarks:
-            for (lx, ly) in landmarks:
-                cv2.circle(frame, (int(lx), int(ly)), 2, (0, 0, 255), -1)
-
-        # Display the FPS
-        cv2.putText(frame, f"FPS: {int(fps)}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (150, 150, 150), 2, cv2.LINE_AA)  # Dark grey color
-
-        # Display face detection status
-        if len(faces) > 0:
-            face_detected_text = "Face Detected"
-            color = (0, 255, 0)  # Green color
-        else:
-            face_detected_text = "No Face Detected"
-            color = (0, 0, 255)  # Red color
-
-        cv2.putText(frame, face_detected_text, (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2, cv2.LINE_AA)
-
-        cv2.imshow('Webcam Face Landmarks', frame)
-
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+        print("Size: {}".format(size))
+        client_socket.sendall(struct.pack(">L", size) + data)
 
     cap.release()
-    cv2.destroyAllWindows()
     hailo_inference.release_device()
+    client_socket.close()
     print("Done")
 
 if __name__ == "__main__":
