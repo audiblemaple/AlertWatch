@@ -34,20 +34,35 @@ from torchaudio.transforms import Resample
 import numpy as np
 import yaml
 
+
+
+# Initialize PyAudio
+audio = pyaudio.PyAudio()
+
+# List all available input devices
+print("Available audio input devices:")
+for i in range(audio.get_device_count()):
+    device_info = audio.get_device_info_by_index(i)
+    if device_info['maxInputChannels'] > 0:
+        print(f"Device {i}: {device_info['name']}")
+
+# Choose the microphone device
+device_index = int(input("Enter the device index you want to use: "))
+
 # Initialize the audio input
 FORMAT = pyaudio.paInt16
 CHANNELS = 1
 RATE = 16000
 CHUNK = 1024
-SILENCE_THRESHOLD = 1500
+SILENCE_THRESHOLD = 1000
 SILENCE_CHUNKS = 30
 MIN_RECORDING_TIME = 2
-ENERGY_THRESHOLD = 1000
+ENERGY_THRESHOLD = 700
 REQUIRED_SCORE = 2.0
 
 # Initialize PyAudio
 audio = pyaudio.PyAudio()
-stream = audio.open(format=FORMAT, channels=CHANNELS, rate=RATE, input=True, frames_per_buffer=CHUNK)
+stream = audio.open(format=FORMAT, channels=CHANNELS, rate=RATE, input=True, input_device_index=device_index,frames_per_buffer=CHUNK)
 
 # Load the Wav2Vec2 model
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
