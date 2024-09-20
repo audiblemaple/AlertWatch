@@ -17,7 +17,7 @@ def main():
     """
     parser = argparse.ArgumentParser(description="Facial Landmarks Detection Testing")
     parser.add_argument("-n", "--net",
-                        default='../../models/face/face_landmarks_epoch_4396.pth',
+                        default='../../models/face/10K_epochs/face_landmarks_epoch_9319.pth',
                         type=str,
                         help="Path for the .pth model.",
                         required=False

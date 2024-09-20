@@ -6,8 +6,8 @@ Trying to assess the users' alertness.
 If a drop in alertness is detected, the detection system will signal the ECU to alert the user.
 
 ## Project Docs
-* [Book](Alertwatch.docx)
-* [Presentation](Alertwatch.pptx)
+* [Book](final_project/Docs/AlertWatch.docx)
+* [Presentation](final_project/Docs/Alertwatch.pptx)
 
 ## Components
 The system comprises 2 parts:
