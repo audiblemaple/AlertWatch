@@ -8,26 +8,16 @@ This section outlines the process:
 * Running the .hef on hailo hardware
 
 ## PyTorch -> har
-* [Book](final_project/Docs/AlertWatch.docx)
-* [Presentation](final_project/Docs/Alertwatch.pptx)
+* [Parsing](1.parsing)
 
 ## Quantization
-The system comprises 2 parts:
-* [ECU / Management unit](#ecu--management-unit)
-* [Detection unit](#detection-unit)
+* [Optimization](2.optimization)
 
 ## har -> hef
-The system comprises 2 parts:
-* [ECU / Management unit](#ecu--management-unit)
-* [Detection unit](#detection-unit)
-
+* [Compilation](4.compilation)
 
 ## Running hef
-The system comprises 2 parts:
-* [ECU / Management unit](#ecu--management-unit)
-* [Detection unit](#detection-unit)
-
-
+* [Validation](5.validation)
 
 ## Known issues
 * The facial landmarks are not scaled / offset correctly in the validation step. 

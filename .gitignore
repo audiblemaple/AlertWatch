@@ -7,4 +7,5 @@ diagrams
 *.hef
 *.npy
 *.pth
+*.onnx
 *.log
