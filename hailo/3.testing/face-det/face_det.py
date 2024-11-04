@@ -117,19 +117,19 @@ def postprocess(outputs, img_w, img_h, scale, pad_w, pad_h, score_threshold=0.65
     # Decode bounding boxes
     boxes = decode_bboxes(bbox_pred, anchors, variances)
 
-    print(boxes)
-    print(input_size)
+    # print(boxes)
+    # print(input_size)
     # Adjust boxes to input_size coordinates
     boxes[:, 0] *= input_size  # x_min
     boxes[:, 1] *= input_size  # y_min
     boxes[:, 2] *= input_size  # x_max
     boxes[:, 3] *= input_size  # y_max
-    print(boxes[:, 0] * input_size )
-    print(boxes[:, 1] * input_size )
-    print(boxes[:, 2] * input_size )
-    print(boxes[:, 3] * input_size )
-
-    print(pad_w, pad_h)
+    # print(boxes[:, 0] * input_size )
+    # print(boxes[:, 1] * input_size )
+    # print(boxes[:, 2] * input_size )
+    # print(boxes[:, 3] * input_size )
+    #
+    # print(pad_w, pad_h)
     # Remove padding to get boxes in resized image coordinates
     boxes[:, 0] -= pad_w
     boxes[:, 1] -= pad_h
@@ -137,8 +137,8 @@ def postprocess(outputs, img_w, img_h, scale, pad_w, pad_h, score_threshold=0.65
     boxes[:, 3] -= pad_h
 
     boxes[:, 0] /= scale * 1.1
-    boxes[:, 1] /= scale * 1.3
-    boxes[:, 2] /= scale * 1.3
+    boxes[:, 1] /= scale * 1.1
+    boxes[:, 2] /= scale * 1.45
     boxes[:, 3] /= scale * 1.45
 
     # Clip coordinates to original image size
