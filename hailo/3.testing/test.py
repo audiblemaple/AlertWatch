@@ -81,8 +81,8 @@ def postprocess_frame(frame, landmarks, face_coordinates):
     return frame
 
 def main():
-    hef_path = 'face_landmarks_trained.hef'
-    haarcascade_path = 'haarcascades/haarcascade_frontalface_alt.xml'
+    hef_path = '../4.compilation/hailo8/output/face-landmarks-detection.hef'
+    haarcascade_path = '../../haarcascades/haarcascade_frontalface_alt.xml'
     hailo_inference = HailoInference(hef_path)
     height, width, _ = hailo_inference.get_input_shape()
 

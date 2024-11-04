@@ -99,7 +99,7 @@ def main():
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
 
-    haar_cascade_path = '../haarcascades/haarcascade_frontalface_alt.xml'
+    haar_cascade_path = '../../../../haarcascades/haarcascade_frontalface_alt.xml'
     face_cascade = cv2.CascadeClassifier(haar_cascade_path)
     if face_cascade.empty():
         raise IOError(f"Could not load Haar cascade file from {haar_cascade_path}")

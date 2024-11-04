@@ -5,12 +5,12 @@ from hailo_sdk_client import ClientRunner, InferenceContext
 import time
 
 # Load the parsed HAR model
-model_name = 'face_landmarks_trained'
-har_file = f'{model_name}.har'
+model_name = '../4.compilation/hailo8/output/face-landmarks-detection_compiled.har'
+har_file = f'{model_name}'
 runner = ClientRunner(har=har_file)
 
 # Specify the path to the Haar Cascade file directly
-haar_cascade_path = 'haarcascades/haarcascade_frontalface_alt.xml'
+haar_cascade_path = '../../haarcascades/haarcascade_frontalface_alt.xml'
 face_cascade = cv2.CascadeClassifier(haar_cascade_path)
 
 # Check if the cascade file loaded correctly
@@ -61,14 +61,17 @@ while True:
     for (x, y, w, h) in faces:
         # Extract the face ROI
         face_roi = frame[y:y+h, x:x+w]
-        
+        print("face ROI: ", face_roi)
         # Preprocess the face ROI
         preprocessed_face = preprocess_image(face_roi)
 
         # Run inference on the preprocessed face
         with runner.infer_context(InferenceContext.SDK_NATIVE) as ctx:
             results = runner.infer(ctx, preprocessed_face)
-        
+
+        print(results)
+        exit(1)
+
         # Process the results
         landmarks = results[0].reshape(-1, 2)
         landmarks = (landmarks * [w, h]).astype(np.int)  # Scale landmarks back to the face ROI size
