@@ -15,7 +15,7 @@ router.post("/", async (req, res) => {
 
 		await updateDriveData(severity);
 
-		// TODO:
+
 
 		res.status(200).json({status: not_implemented, message: "NOT implemented"});
 

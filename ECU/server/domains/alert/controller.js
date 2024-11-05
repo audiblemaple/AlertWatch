@@ -27,7 +27,7 @@ const updateDriveData = async (data) => {
 				console.log(currentDriveObject)
 				throw Error('Error processing alert!');
 		}
-
+		
 		currentDriveObject.alert_count = currentDriveObject.high_alert_num + currentDriveObject.medium_alert_num + currentDriveObject.mild_alert_num;
 		updateDriveDataLog()
 
