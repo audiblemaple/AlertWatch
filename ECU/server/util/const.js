@@ -1,4 +1,7 @@
-failure = "Fail"
-ok = "OK"
-not_implemented = "Not Implemented"
-module.exports = { failure, ok, not_implemented };
+const status = {
+    ok: "OK",
+    fail: "Fail",
+    not_implemented: "Not Implemented"
+}
+
+module.exports = { status };

@@ -1,72 +1,96 @@
-// Speed Gauge
-	var gauge = new RadialGauge({
-		renderTo: 'canvas-id',
-		width: 300,
-		height: 300,
-		units: "Km/h",
-		minValue: 0,
-		maxValue: 220,
-		majorTicks: [
-			"0",
-			"20",
-			"40",
-			"60",
-			"80",
-			"100",
-			"120",
-			"140",
-			"160",
-			"180",
-			"200",
-			"220"
-		],
-		minorTicks: 2,
-		strokeTicks: true,
-		highlights: [
-			{
-				"from": 160,
-				"to": 220,
-				"color": "rgba(200, 50, 50, .75)"
-			}
-		],
-		colorPlate: "#fff",
-		borderShadowWidth: 0,
-		borders: false,
-		needleType: "arrow",
-		needleWidth: 2,
-		needleCircleSize: 7,
-		needleCircleOuter: true,
-		needleCircleInner: false,
-		animationDuration: 1000,
-		animationRule: "linear"
-	}).draw();
+var gauge = null;
+function createGauge(gaugeConf){
+    if (!"tickList" in gaugeConf) {
+        return 1;
+    }
+        if (!"redline" in gaugeConf) {
+        return 1;
+    }
 
-	// Dynamically update speed gauge value
-	function updateSpeed(speed) {
-		gauge.value = speed;
-		gauge.valueText = speed
-		document.getElementById('speedValue').textContent = speed;
-	}
+    // Speed Gauge
+    gauge = new RadialGauge({
+        renderTo: 'canvas-id',
+        width: 300,
+        height: 300,
+        units: "Km/h",
+        minValue: 0,
+        maxValue: 220,
+        majorTicks: gaugeConf.tickList,
+        minorTicks: 2,
+        strokeTicks: true,
+        highlights: [
+            {
+                "from": gaugeConf.redline.minVal,
+                "to": gaugeConf.redline.maxVal,
+                "color": "rgba(200, 50, 50, .75)"
+            }
+        ],
+        colorPlate: "#fff",
+        borderShadowWidth: 0,
+        borders: false,
+        needleType: "arrow",
+        needleWidth: 2,
+        needleCircleSize: 7,
+        needleCircleOuter: true,
+        needleCircleInner: false,
+        animationDuration: 1000,
+        animationRule: "linear"
+    }).draw();
+}
 
-	// Simulating speed updates
-	let speed = 0;
-	setInterval(() => {
-		let selector = Math.random() > 0.5 ? 1 : -1; // Randomly select whether to increase or decrease the speed
-		let speedChange = Math.floor(Math.random() * 30);
+// Dynamically update speed gauge value
+function updateSpeed(speed) {
+    gauge.value = speed;
+    gauge.valueText = speed
+    document.getElementById('speedValue').textContent = speed;
+}
 
-		// Update speed, ensuring it stays within 0 and 220
-		speed = Math.max(0, Math.min(220, speed + selector * speedChange));
+// Video feed (Placeholder for network video feed)
+// TODO: add receiving and displaying of the video feed and postprocessing
+const videoElement = document.getElementById('videoFeed');
+navigator.mediaDevices.getUserMedia({video: true})
+    .then(stream => {
+        videoElement.srcObject = stream;
+    })
+    .catch(error => {
+        console.error("Error accessing camera: ", error);
+    });
 
-		updateSpeed(speed);
-	}, 1500);
+const socket = new WebSocket("ws://192.168.0.233:5000");
 
-	// Video feed (Placeholder for network video feed)
-    // TODO: add receiving and displaying of the video feed and postprocessing
-	const videoElement = document.getElementById('videoFeed');
-	navigator.mediaDevices.getUserMedia({ video: true })
-		.then(stream => {
-			videoElement.srcObject = stream;
-		})
-		.catch(error => {
-			console.error("Error accessing camera: ", error);
-		});
+socket.onopen = () => {
+    console.log("Connected to WebSocket server.");
+};
+
+socket.onmessage = (event) => {
+    // Parse the JSON message received from the server
+    const data = JSON.parse(event.data);
+    const {type, msgData} = data;
+    console.log(data);
+
+    switch (type) {
+		case "welcome":
+            const {gaugeConf} = data;
+            createGauge(gaugeConf);
+            console.warn("welcome messages are just for debugging");
+            break;
+
+        case "speed":
+            updateSpeed(msgData);
+            break;
+
+        default:
+            console.log("unknown type");
+            break;
+    }
+
+    console.log(data);
+};
+
+socket.onclose = () => {
+    console.log("Disconnected from WebSocket server.");
+};
+
+socket.onerror = (error) => {
+    console.error("WebSocket error:", error);
+};

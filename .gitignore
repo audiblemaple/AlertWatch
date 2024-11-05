@@ -10,3 +10,4 @@ diagrams
 *.pt
 *.onnx
 *.log
+whisper.cpp
