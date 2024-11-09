@@ -1,5 +1,6 @@
 const WebSocket = require("ws");
 const {startSpeedBroadcast} = require("./util/carManager");
+const {maxSpeed} = process.env;
 
 // Function to initialize the WebSocket server
 function initWebSocket(server) {
@@ -30,22 +31,14 @@ function initWebSocket(server) {
 
 // Function to send a welcome message
 function sendWelcomeMessage(ws) {
+    let tickList = [];
+    for (let i = 0; i <= maxSpeed; i += 20) {
+        tickList.push(i);
+    }
     const welcomeMessage = {
         type: "welcome",
         gaugeConf: {
-            tickList: [ "0",
-                    "20",
-                    "40",
-                    "60",
-                    "80",
-                    "100",
-                    "120",
-                    "140",
-                    "160",
-                    "180",
-                    "200",
-                    "220"
-            ],
+            tickList: tickList,
             redline: {
                 minVal: 160,
                 maxVal: 220
@@ -80,12 +73,16 @@ function handleClientMessage(ws, message) {
         const {type, msgData} = message;
 
         switch (type) {
-            case "speed":
+            case "accelerate":
                 console.log(msgData);
                 break;
 
-            case "TODO":
-                console.log();
+            case "decelerate":
+                console.log(msgData);
+                break;
+
+            case "cruise":
+                console.log(msgData);
                 break;
 
             default:

@@ -13,6 +13,7 @@ const updateDriveData = async (data) => {
 			case "low":
 				currentDriveObject.mild_alert_num += 1;
 				break;
+
 			default:
 				console.log(currentDriveObject)
 				throw Error('Error processing alert!');

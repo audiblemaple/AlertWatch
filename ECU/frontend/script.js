@@ -33,7 +33,7 @@ function createGauge(gaugeConf){
         needleCircleSize: 7,
         needleCircleOuter: true,
         needleCircleInner: false,
-        animationDuration: 1000,
+        animationDuration: 950,
         animationRule: "linear"
     }).draw();
 }

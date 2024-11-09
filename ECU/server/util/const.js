@@ -4,4 +4,8 @@ const status = {
     not_implemented: "Not Implemented"
 }
 
-module.exports = { status };
+const units ={
+    second: 1000,
+}
+
+module.exports = { status, units };
