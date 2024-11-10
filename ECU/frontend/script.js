@@ -40,6 +40,7 @@ function createGauge(gaugeConf){
 
 // Dynamically update speed gauge value
 function updateSpeed(speed) {
+    console.log(speed);
     gauge.value = speed;
     gauge.valueText = speed
     document.getElementById('speedValue').textContent = speed;
@@ -56,7 +57,8 @@ navigator.mediaDevices.getUserMedia({video: true})
         console.error("Error accessing camera: ", error);
     });
 
-const socket = new WebSocket("ws://192.168.0.233:5000");
+// const socket = new WebSocket("ws://192.168.0.233:5000");
+const socket = new WebSocket("ws://192.168.0.64:5000");
 
 socket.onopen = () => {
     console.log("Connected to WebSocket server.");
