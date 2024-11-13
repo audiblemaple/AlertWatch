@@ -34,7 +34,7 @@ function logStatus(){
 function startSpeedBroadcast(wss) {
     setInterval(() => {
         updateSpeed();
-        logStatus()
+        // logStatus();
         broadcastSpeed(wss, speed);
     }, updateFreq * units.second);
 }

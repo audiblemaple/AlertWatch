@@ -1,9 +1,9 @@
 const {currentDriveObject, updateDriveDataLog} = require("../../util/driveLogManager");
-const Aplay = require('node-aplay');
+// const Aplay = require('node-aplay');
 const path = require('path');
-const ffmpeg = require('fluent-ffmpeg');
-const { exec } = require('child_process');
-const {units} = require("../../util/const");
+// const ffmpeg = require('fluent-ffmpeg');
+// const {exec} = require('child_process');
+// const {units} = require("../../util/const");
 
 const updateDriveData = async (data) => {
 	try {
@@ -43,49 +43,49 @@ const fadeOutVolume = async (sinkInputs, id, volume) => {
 	}
 };
 
-const setMuteVal = (sinkInputs, val) => {
-	sinkInputs.forEach(id => {
-		exec(`pacmd set-sink-input-mute ${id} ${val}`);
-	});
-}
-
-const soundAlert = (fileName) => {
-	const filePath = path.join(__dirname, '../../assets', fileName);
-
-	// Step 1: Get all current sink input IDs and mute them
-	exec("pacmd list-sink-inputs | grep index", (err, stdout) => {
-		if (err) {
-			console.error('Error retrieving sink inputs:', err);
-		}
-
-		// Extract all sink input IDs
-		const sinkInputs = stdout
-			.trim()
-			.split('\n')
-			.map(line => line.split(' ')[1])
-			.filter(id => id);
-
-		setMuteVal(sinkInputs, 1);
-
-		// Step 2: Play the alert sound and get its duration
-		ffmpeg.ffprobe(filePath, (err, metadata) => {
-			if (err) {
-				console.error('Error retrieving file metadata:', err);
-				return;
-			}
-
-			const duration = metadata.format.duration * units.second;
-			const player = new Aplay(filePath);
-			player.play();
-
-			// Step 3: Unmute all inputs after the alert sound finishes
-			setTimeout(() => {
-				player.pause();
-				setMuteVal(sinkInputs, 0);
-			}, duration);
-		});
-	});
-};
+// const setMuteVal = (sinkInputs, val) => {
+// 	sinkInputs.forEach(id => {
+// 		exec(`pacmd set-sink-input-mute ${id} ${val}`);
+// 	});
+// }
+//
+// const soundAlert = (fileName) => {
+// 	const filePath = path.join(__dirname, '../../assets', fileName);
+//
+// 	// Step 1: Get all current sink input IDs and mute them
+// 	exec("pacmd list-sink-inputs | grep index", (err, stdout) => {
+// 		if (err) {
+// 			console.error('Error retrieving sink inputs:', err);
+// 		}
+//
+// 		// Extract all sink input IDs
+// 		const sinkInputs = stdout
+// 			.trim()
+// 			.split('\n')
+// 			.map(line => line.split(' ')[1])
+// 			.filter(id => id);
+//
+// 		setMuteVal(sinkInputs, 1);
+//
+// 		// Step 2: Play the alert sound and get its duration
+// 		ffmpeg.ffprobe(filePath, (err, metadata) => {
+// 			if (err) {
+// 				console.error('Error retrieving file metadata:', err);
+// 				return;
+// 			}
+//
+// 			const duration = metadata.format.duration * units.second;
+// 			const player = new Aplay(filePath);
+// 			player.play();
+//
+// 			// Step 3: Unmute all inputs after the alert sound finishes
+// 			setTimeout(() => {
+// 				player.pause();
+// 				setMuteVal(sinkInputs, 0);
+// 			}, duration);
+// 		});
+// 	});
+// };
 
 // const soundAlert = (fileName) => {
 // 	const filePath = path.join(__dirname, '../../assets', fileName);
@@ -118,4 +118,5 @@ const soundAlert = (fileName) => {
 // 	});
 // };
 
-module.exports = {updateDriveData, soundAlert}
+module.exports = {updateDriveData}
+// module.exports = {updateDriveData, soundAlert}

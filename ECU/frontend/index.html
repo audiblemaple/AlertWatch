@@ -16,7 +16,7 @@
     <div id="dashboard">
         <!-- Speed Gauge Section -->
         <div id="gauge-container" class="section">
-            <h2>car speed</h2>
+            <h2 class="header" >car speed</h2>
             <canvas
                     id="canvas-id"
             ></canvas>
@@ -25,20 +25,21 @@
 
         <!-- something Placeholder Section -->
         <div id="Detection-unit-container" class="section">
-            <h2>Detection unit data</h2>
-            <p>Detection unit data (TODO)</p>
+            <h2 class="header" >Detection unit data</h2>
+            <p id="detection-unit-data" ></p>
         </div>
 
         <!-- something Placeholder Section -->
         <div id="TODO-container" class="section">
-            <h2>TODO-container</h2>
-            <p>TODO-container (TODO)</p>
+            <h2 class="header" >Detection feed data</h2>
+            <p id="fpsDisplay">NAN</p>
+            <p id="fpsDisplayAVG">NAN</p>
         </div>
 
         <!-- Video Feed Section -->
         <div id="video-container" class="section">
-            <h2>Detection feed</h2>
-            <video id="videoFeed" autoplay></video>
+            <h2 class="header" >Detection feed</h2>
+            <img id="videoFeed" alt="Detection Feed" />
         </div>
     </div>
 </body>

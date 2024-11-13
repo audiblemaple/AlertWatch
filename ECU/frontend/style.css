@@ -43,11 +43,11 @@
             width: 90svw;
             max-width: 1500px;
             background-color: #fff;
-            padding: 20px 20px 100px 20px;
+            padding: 20px 20px 50px 20px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             border-radius: 12px;
             transition: all 0.3s ease-in-out;
-            height: auto;
+            height: 80svh;
             overflow-y: auto;
         }
 
@@ -64,7 +64,7 @@
         .section {
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            /*justify-content: center;*/
             align-items: center;
             padding: 20px;
             background-color: #e9ecef;
@@ -78,7 +78,8 @@
         }
 
         #gauge-container {
-            background-color: #f8f9fa;
+            /*background-color: #f8f9fa;*/
+            background-color: #e9ecef;
         }
 
         #speedValue {
@@ -87,16 +88,32 @@
             color: #495057;
         }
 
-        #video-container video {
-            width: 100%;
-            height: auto;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        #video-container {
+            position: relative;
+            height: 100%;
+            width: auto;
+            overflow: hidden;
+        }
+
+        #videoFeed {
+            width: auto;
+            height: 90%;
+            object-fit: cover;
+            border-radius: 30px;
         }
 
         #tensor-container p {
             color: #6c757d;
             font-size: 1.2rem;
+        }
+
+        #fpsDisplay{
+            color: #00bf07;
+            font-weight: bold;
+            font-size: 25px;
+            /*position: relative;*/
+            /*top: 40px;*/
+            /*left: -300px;*/
         }
 
         p {

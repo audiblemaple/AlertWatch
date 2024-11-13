@@ -1,4 +1,8 @@
-var gauge = null;
+let gauge = null;
+let lastFrameTime = null;
+let samples = 1;
+let fpsAvg = 0;
+
 function createGauge(gaugeConf){
     if (!"tickList" in gaugeConf) {
         return 1;
@@ -33,32 +37,19 @@ function createGauge(gaugeConf){
         needleCircleSize: 7,
         needleCircleOuter: true,
         needleCircleInner: false,
-        animationDuration: 950,
+        animationDuration: 970,
         animationRule: "linear"
     }).draw();
 }
 
 // Dynamically update speed gauge value
 function updateSpeed(speed) {
-    console.log(speed);
     gauge.value = speed;
     gauge.valueText = speed
     document.getElementById('speedValue').textContent = speed;
 }
 
-// Video feed (Placeholder for network video feed)
-// TODO: add receiving and displaying of the video feed and postprocessing
-const videoElement = document.getElementById('videoFeed');
-navigator.mediaDevices.getUserMedia({video: true})
-    .then(stream => {
-        videoElement.srcObject = stream;
-    })
-    .catch(error => {
-        console.error("Error accessing camera: ", error);
-    });
-
-// const socket = new WebSocket("ws://192.168.0.233:5000");
-const socket = new WebSocket("ws://192.168.0.64:5000");
+const socket = new WebSocket("ws://192.168.0.233:5000");
 
 socket.onopen = () => {
     console.log("Connected to WebSocket server.");
@@ -68,11 +59,13 @@ socket.onmessage = (event) => {
     // Parse the JSON message received from the server
     const data = JSON.parse(event.data);
     const {type, msgData} = data;
-    console.log(data);
 
     switch (type) {
 		case "welcome":
-            const {gaugeConf} = data;
+            const {gaugeConf, detectionUnitData} = data;
+            console.log(detectionUnitData);
+            document.getElementById("detection-unit-data").textContent = detectionUnitData;
+
             createGauge(gaugeConf);
             console.warn("welcome messages are just for debugging");
             break;
@@ -81,12 +74,33 @@ socket.onmessage = (event) => {
             updateSpeed(msgData);
             break;
 
+        case "detection_feed":
+            // Extract the frame and update the image
+            const {frame} = msgData;
+            const videoElement = document.getElementById('videoFeed');
+            videoElement.src = `data:image/jpeg;base64,${frame}`;
+
+            // Calculate and display FPS
+            const currentTime = performance.now(); // Get the current time in milliseconds
+            if (lastFrameTime) {
+                const fps = 1000 / (currentTime - lastFrameTime); // Calculate FPS
+                document.getElementById("fpsDisplay").textContent = `FPS: ${fps.toFixed(2)}`;
+                fpsAvg += fps
+                document.getElementById("fpsDisplayAVG").textContent = `AVG. FPS: ${(fpsAvg / samples).toFixed(1)}`;
+                samples += 1;
+                if (fps < 25)
+                    document.getElementById("fpsDisplay").style.color = "red";
+                else
+                    document.getElementById("fpsDisplay").style.color = "#00bf07";
+
+            }
+            lastFrameTime = currentTime; // Update the last frame time
+            break;
+
         default:
             console.log("unknown type");
             break;
     }
-
-    console.log(data);
 };
 
 socket.onclose = () => {
