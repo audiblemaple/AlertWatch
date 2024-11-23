@@ -5,7 +5,7 @@ from PIL import Image
 import torchvision.transforms.functional as TF
 
 # Load the ONNX model
-onnx_path = 'eye_landmarks.onnx'
+onnx_path = ''
 ort_session = ort.InferenceSession(onnx_path)
 
 # Load Haar Cascade for face detection

@@ -4,7 +4,7 @@ import pickle
 import numpy as np
 import struct
 
-HOST = ''
+HOST = '0.0.0.0'
 PORT = 8485
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

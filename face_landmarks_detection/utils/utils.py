@@ -4,7 +4,6 @@ from torch.utils.data import Dataset, DataLoader
 from face_landmarks_detection.utils.landmarksDataSet import LandmarksDataset
 import cv2
 
-
 def print_overwrite(step, total_step, loss, operation):
     sys.stdout.write('\r')
     if operation == 'train':
