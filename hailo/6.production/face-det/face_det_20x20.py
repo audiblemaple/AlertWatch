@@ -26,31 +26,24 @@ def preproc(image, input_size=(640, 640)):
     padded_image = np.full((input_h, input_w, 3), 127, dtype=np.uint8)
     pad_w, pad_h = (input_w - new_w) // 2, (input_h - new_h) // 2
     padded_image[pad_h:pad_h + new_h, pad_w:pad_w + new_w, :] = resized_image
-    return padded_image, scale, pad_w, pad_h, img_w, img_h  # Return original image dimensions
+    return padded_image, scale, pad_w, pad_h
 
-def postprocess(outputs, img_w, img_h, scale, pad_w, pad_h, score_threshold=0.65, nms_threshold=0.4):
+def postprocess(outputs, scale, pad_w, pad_h, score_threshold=0.7, nms_threshold=0.4):
     """
-    Postprocess the model outputs to extract face bounding boxes from the medium scale (40x40).
+    Postprocess the model outputs to extract face bounding boxes from the smallest scale (20x20).
     """
-
     def decode_bboxes(bbox_pred, anchors, variances=[0.1, 0.2]):
         # bbox_pred: [N, 4], anchors: [N, 4]
-        # anchors are in [cx, cy, w, h] format
-
-        # Compute center coordinates and size
         boxes = np.zeros_like(bbox_pred)
-        boxes[:, 0] = anchors[:, 0] + bbox_pred[:, 0] * variances[0] * anchors[:, 2]  # cx
-        boxes[:, 1] = anchors[:, 1] + bbox_pred[:, 1] * variances[0] * anchors[:, 3]  # cy
-        boxes[:, 2] = anchors[:, 2] * np.exp(bbox_pred[:, 2] * variances[1])  # w
-        boxes[:, 3] = anchors[:, 3] * np.exp(bbox_pred[:, 3] * variances[1])  # h
-
+        boxes[:, 0] = anchors[:, 0] + bbox_pred[:, 0] * variances[0] * anchors[:, 2]
+        boxes[:, 1] = anchors[:, 1] + bbox_pred[:, 1] * variances[0] * anchors[:, 3]
+        boxes[:, 2] = anchors[:, 2] * np.exp(bbox_pred[:, 2] * variances[1])
+        boxes[:, 3] = anchors[:, 3] * np.exp(bbox_pred[:, 3] * variances[1])
         # Convert to corner coordinates
-        x_min = boxes[:, 0] - boxes[:, 2] / 2  # x_min
-        y_min = boxes[:, 1] - boxes[:, 3] / 2  # y_min
-        x_max = boxes[:, 0] + boxes[:, 2] / 2  # x_max
-        y_max = boxes[:, 1] + boxes[:, 3] / 2  # y_max
-
-        boxes = np.stack([x_min, y_min, x_max, y_max], axis=1)
+        boxes[:, 0] -= boxes[:, 2] / 2  # x_min
+        boxes[:, 1] -= boxes[:, 3] / 2  # y_min
+        boxes[:, 2] += boxes[:, 0]      # x_max
+        boxes[:, 3] += boxes[:, 1]      # y_max
         return boxes
 
     def generate_anchors(fm_sizes, input_size, steps, min_sizes):
@@ -77,23 +70,25 @@ def postprocess(outputs, img_w, img_h, scale, pad_w, pad_h, score_threshold=0.65
         )
         return indices.flatten() if len(indices) > 0 else []
 
-    # Model parameters for the medium scale
+    # Model parameters for the smallest scale
     input_size = 640
     variances = [0.1, 0.2]
-    steps = [16]  # Medium scale step size
-    min_sizes = [[64, 128]]  # Anchors for the medium scale
-    score_threshold = 0.65
+    steps = [32]  # Smallest scale step size
+    min_sizes = [[256, 512]]  # Anchors for the smallest scale
+    score_threshold = 0.7
     nms_threshold = 0.4
 
     # Feature map sizes
     fm_sizes = [(input_size // step, input_size // step) for step in steps]
+    # fm_sizes = [(20, 20)]  # For step 32
 
     # Generate anchors
     anchors = generate_anchors(fm_sizes, input_size, steps, min_sizes)
+    # anchors.shape: [N, 4]
 
-    # Extract outputs for the medium scale
-    bbox_pred = outputs['scrfd_10g/conv54'][0]  # Shape: [40, 40, 8]
-    cls_score = outputs['scrfd_10g/conv53'][0]  # Shape: [40, 40, 2]
+    # Extract outputs for the smallest scale
+    bbox_pred = outputs['scrfd_10g/conv57'][0]  # Shape: [20, 20, 8]
+    cls_score = outputs['scrfd_10g/conv56'][0]  # Shape: [20, 20, 2]
 
     H, W, _ = bbox_pred.shape
     num_anchors = 2  # Since bbox_pred has 8 channels and 4 values per box
@@ -117,35 +112,11 @@ def postprocess(outputs, img_w, img_h, scale, pad_w, pad_h, score_threshold=0.65
     # Decode bounding boxes
     boxes = decode_bboxes(bbox_pred, anchors, variances)
 
-    # print(boxes)
-    # print(input_size)
-    # Adjust boxes to input_size coordinates
+    # Adjust boxes to image scale
     boxes[:, 0] *= input_size  # x_min
     boxes[:, 1] *= input_size  # y_min
     boxes[:, 2] *= input_size  # x_max
     boxes[:, 3] *= input_size  # y_max
-    # print(boxes[:, 0] * input_size )
-    # print(boxes[:, 1] * input_size )
-    # print(boxes[:, 2] * input_size )
-    # print(boxes[:, 3] * input_size )
-    #
-    # print(pad_w, pad_h)
-    # Remove padding to get boxes in resized image coordinates
-    boxes[:, 0] -= pad_w
-    boxes[:, 1] -= pad_h
-    boxes[:, 2] -= pad_w
-    boxes[:, 3] -= pad_h
-
-    boxes[:, 0] /= scale * 1.1
-    boxes[:, 1] /= scale * 1.1
-    boxes[:, 2] /= scale * 1.45
-    boxes[:, 3] /= scale * 1.45
-
-    # Clip coordinates to original image size
-    boxes[:, 0] = np.clip(boxes[:, 0], 0, img_w)
-    boxes[:, 1] = np.clip(boxes[:, 1], 0, img_h)
-    boxes[:, 2] = np.clip(boxes[:, 2], 0, img_w)
-    boxes[:, 3] = np.clip(boxes[:, 3], 0, img_h)
 
     # Apply NMS
     boxes_xywh = boxes.copy()
@@ -155,12 +126,14 @@ def postprocess(outputs, img_w, img_h, scale, pad_w, pad_h, score_threshold=0.65
     boxes = boxes[indices]
     scores = scores[indices]
 
-    # Convert to integers
-    boxes = boxes.astype(int)
-
+    # Adjust boxes back to original image scale
     results = []
     for box, score in zip(boxes, scores):
         x1, y1, x2, y2 = box
+        x1 = int((x1 - pad_w) / scale)
+        y1 = int((y1 - pad_h) / scale)
+        x2 = int((x2 - pad_w) / scale)
+        y2 = int((y2 - pad_h) / scale)
         results.append((x1, y1, x2, y2, score))
 
     return results
@@ -182,10 +155,10 @@ def main():
     input_shape = input_vstream_info.shape  # Should be [height, width, channels]
     input_height, input_width, _ = input_shape
 
-    # Collect output names for the medium scale
+    # Collect output names for the smallest scale
     output_names = {
-        'bbox_pred': 'scrfd_10g/conv54',  # Medium scale bounding box predictions
-        'cls_pred': 'scrfd_10g/conv53'    # Medium scale classification scores
+        'bbox_pred': 'scrfd_10g/conv57',  # Smallest scale bounding box predictions
+        'cls_pred': 'scrfd_10g/conv56'    # Smallest scale classification scores
     }
 
     with VDevice(device_ids=devices) as target:
@@ -216,7 +189,7 @@ def main():
                     original_frame = frame.copy()
 
                     # Preprocess the frame
-                    processed_frame, scale, pad_w, pad_h, img_w, img_h = preproc(frame, input_size=(input_width, input_height))
+                    processed_frame, scale, pad_w, pad_h = preproc(frame, input_size=(input_width, input_height))
                     processed_frame = processed_frame.astype(np.float32)
                     processed_frame = np.expand_dims(processed_frame, axis=0)  # Add batch dimension
 
@@ -227,20 +200,18 @@ def main():
                     with network_group.activate(network_group_params):
                         raw_detections = infer_pipeline.infer(input_data)
 
-                    # Collect outputs for the medium scale
+                    # Collect outputs for the smallest scale
                     outputs = {
-                        'scrfd_10g/conv54': raw_detections[output_names['bbox_pred']],
-                        'scrfd_10g/conv53': raw_detections[output_names['cls_pred']]
+                        'scrfd_10g/conv57': raw_detections[output_names['bbox_pred']],
+                        'scrfd_10g/conv56': raw_detections[output_names['cls_pred']]
                     }
 
                     # Postprocess detections
-                    faces = postprocess(outputs, img_w, img_h, scale, pad_w, pad_h)
+                    faces = postprocess(outputs, scale, pad_w, pad_h)
 
                     # Draw bounding boxes
                     for (x1, y1, x2, y2, score) in faces:
                         cv2.rectangle(original_frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                        cv2.putText(original_frame, f"{(x1, y1) , (x2, y2)}", (x1, y1 - 30),
-                                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
                         cv2.putText(original_frame, f"{score:.2f}", (x1, y1 - 10),
                                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
 

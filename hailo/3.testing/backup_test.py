@@ -73,7 +73,7 @@ def preprocess_frame(frame, height, width):
 
 
 def main():
-    hef_path = 'face_landmarks.hef'
+    hef_path = 'face-landmarks-detection.hef'
     haarcascade_path = 'haarcascades/haarcascade_frontalface_alt.xml'
     hailo_inference = HailoInference(hef_path)
     height, width, _ = hailo_inference.get_input_shape()
