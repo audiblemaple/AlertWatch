@@ -13,8 +13,6 @@ from hailo_platform import (HEF, Device, VDevice, HailoStreamInterface, InferVSt
 from face_util.processing import preproc, postprocess
 import subprocess
 
-from socket_util.websocketUtil import WebSocketClient
-
 RECONNECT_INTERVAL = 3
 WS_URL = "ws://192.168.0.233:5000"
 WEBSOCKET = None
