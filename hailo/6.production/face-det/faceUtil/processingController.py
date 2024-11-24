@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import scipy.special
 
-def preproc(image, input_size=(640, 640)):
+def preprocess(image, input_size=(640, 640)):
     """
     Preprocess the image: resize to (width, height) with padding to maintain aspect ratio.
     """
