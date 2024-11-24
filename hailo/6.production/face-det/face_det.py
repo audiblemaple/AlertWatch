@@ -68,8 +68,11 @@ async def main():
         )
 
         with InferVStreams(network_group, input_vstreams_params, output_vstreams_params) as infer_pipeline:
-            cap = cv2.VideoCapture(0)
-            cap.set(cv2.CAP_PROP_FPS, 30)
+            # cap = cv2.VideoCapture(0)
+            cap = cv2.VideoCapture(0, cv2.CAP_V4L2)
+            cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'))
+
+            cap.set(cv2.CAP_PROP_FPS, 60)
             if not cap.isOpened():
                 print("Failed to open camera.")
                 return
