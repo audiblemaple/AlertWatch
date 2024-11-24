@@ -81,7 +81,7 @@ def main():
     network = load_model(weights_path, class_num, args.dev)
     face_cascade = load_face_cascade(cascade_path)
     preprocess_pipeline = get_preprocessing_pipeline()
-    cap = init_cv_cap(640, 640, 30)
+    cap = init_cv_cap()
 
     prev_time = cv2.getTickCount()
     cumulative_time = 0.0

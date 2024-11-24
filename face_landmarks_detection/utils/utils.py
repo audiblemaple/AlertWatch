@@ -33,7 +33,7 @@ def create_dataloaders(train_dataset, valid_dataset, batch_size_train=64, batch_
     valid_loader = DataLoader(valid_dataset, batch_size=batch_size_valid, shuffle=True, num_workers=num_workers)
     return train_loader, valid_loader
 
-def init_cv_cap(width, height, fps):
+def init_cv_cap(width=640, height=640, fps=30):
     if 'win' in sys.platform:
         cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
     else:

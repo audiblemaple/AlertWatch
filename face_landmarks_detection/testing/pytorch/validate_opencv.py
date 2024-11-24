@@ -52,7 +52,7 @@ def main():
     face_cascade = cv2.CascadeClassifier(frontal_face_cascade_path)
 
     # Start video capture
-    cap = init_cv_cap(640, 480, 30)
+    cap = init_cv_cap()
 
     # Define preprocessing steps for the face images
     preprocess = transforms.Compose([
