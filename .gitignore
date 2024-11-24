@@ -10,4 +10,5 @@ diagrams
 *.pt
 *.onnx
 *.log
+*.env
 whisper.cpp

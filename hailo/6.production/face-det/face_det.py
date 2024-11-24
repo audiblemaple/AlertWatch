@@ -173,7 +173,7 @@ if __name__ == '__main__':
 # from hailo_platform import (HEF, Device, VDevice, HailoStreamInterface, InferVStreams, ConfigureParams,
 #                             InputVStreamParams, OutputVStreamParams, FormatType)
 #
-# from faceUtil import preprocess, postprocess
+# from processingUtil import preprocess, postprocess
 # import subprocess
 #
 # RECONNECT_INTERVAL = 3
