@@ -1,1 +1,2 @@
 from .HailoInference import HailoInference
+from .HailoInference_async import HailoInference_async
