@@ -4,18 +4,9 @@ import time
 
 import numpy as np
 
-from face_landmarks_detection.utils.utils import init_cv_cap
+from util import init_cv_cap, init_cascade
 from inference import HailoInference
 from processingUtil import preprocess_face_landmarks
-
-
-def init_cascade():
-    haar_cascade_path = '../../haarcascades/haarcascade_frontalface_alt.xml'
-    face_cascade = cv2.CascadeClassifier(haar_cascade_path)
-    if face_cascade.empty():
-        raise IOError(f"Could not load Haar cascade file from {haar_cascade_path}")
-
-    return face_cascade
 
 
 def main():
