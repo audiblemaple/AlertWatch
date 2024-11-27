@@ -126,9 +126,9 @@ def postprocess_faces(outputs, img_w, img_h, scale, pad_w, pad_h, score_threshol
     boxes[:, 3] -= pad_h
 
     boxes[:, 0] /= scale * 1.1
-    boxes[:, 1] /= scale * 1.1
+    boxes[:, 1] /= scale * 1.0
     boxes[:, 2] /= scale * 1.3
-    boxes[:, 3] /= scale * 1.45
+    boxes[:, 3] /= scale * 1.3
 
     # Clip coordinates to original image size
     boxes[:, 0] = np.clip(boxes[:, 0], 0, img_w)
@@ -156,13 +156,52 @@ def postprocess_faces(outputs, img_w, img_h, scale, pad_w, pad_h, score_threshol
 
 
 # Define the preprocessing function with uint8 output
-def preprocess_face_landmarks(image, target_size=(224, 224)):
-    # Convert to grayscale
-    gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+def preprocess_face_landmarks(image, target_size=(224, 224), gray=True):
+    if gray:
+        # Convert to grayscale
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
     # Resize image
-    resized_image = cv2.resize(gray_image, target_size)
-    # Normalize image to 0-255 and convert to uint8
-    normalized_image = (resized_image * 255).astype(np.uint8)
+    resized_image = cv2.resize(image, target_size, interpolation=cv2.INTER_LINEAR)
+
     # Expand dimensions to fit the model input
-    expanded_image = np.expand_dims(normalized_image, axis=[0, -1])
+    expanded_image = np.expand_dims(resized_image, axis=[0, -1])
+
+    # return expanded_image
     return expanded_image
+
+
+
+# def preprocess_face_landmarks(image, target_size=(120, 120), gray=False):
+#     """
+#     Preprocess the input image for the TDDFA model.
+#
+#     Parameters:
+#     - image: Input image in BGR format (as loaded by OpenCV).
+#     - target_size: Tuple indicating the desired output size (width, height).
+#     - gray: Boolean indicating whether to convert the image to grayscale.
+#
+#     Returns:
+#     - input_tensor: A NumPy array of shape [1, 3, 120, 120] ready for the model.
+#     """
+#     if gray:
+#         # Convert to grayscale (not recommended for this model)
+#         image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+#         # Duplicate the grayscale image across 3 channels to match the model's input
+#         image = np.stack((image, image, image), axis=-1)
+#     else:
+#         # Convert from BGR (OpenCV format) to RGB
+#         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+#
+#     # Resize image to the target size
+#     resized_image = cv2.resize(image, target_size)
+#
+#     # Normalize image to have pixel values between approximately -1 and 1
+#     normalized_image = (resized_image - 127.5) / 128.0
+#
+#     # Expand dimensions to add batch size: [Channels, Height, Width] -> [Batch Size, Channels, Height, Width]
+#     input_tensor = np.expand_dims(normalized_image, axis=0)
+#
+#     input_tensor = np.ascontiguousarray(input_tensor)
+#
+#     return input_tensor

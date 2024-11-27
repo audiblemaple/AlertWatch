@@ -2,41 +2,41 @@ import cv2
 import argparse
 import time
 
+import numpy as np
+
+from face_landmarks_detection.utils.utils import init_cv_cap
 from inference import HailoInference
+from processingUtil import preprocess_face_landmarks
 
-def main():
-    parser = argparse.ArgumentParser(description="Facial Landmarks Detection Example")
-    parser.add_argument("-n", "--net", help="Path for the HEF model.", default="model/face-landmarks-detection.hef", required=False)
-    parser.add_argument("-a", "--arch", help="Hailo architecture, h8, h15h", required=False)  # For future
-    args = parser.parse_args()
 
-    # Load the HEF model
-    hailo_inference = HailoInference(args.net, input_type="UINT8", output_type='UINT8')
-
-    # Get input shape
-    input_height, input_width, _ = hailo_inference.get_input_shape()
-
-    # Capture video from webcam
-    cap = cv2.VideoCapture(0)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-    cap.set(cv2.CAP_PROP_FPS, 30)
-    if not cap.isOpened():
-        print("Error: Could not open webcam.")
-        return
-
-    # Set resolution to 640x480 (or higher if needed for accuracy)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-
-    fps_start_time = 0
-    fps = 0
-
+def init_cascade():
     haar_cascade_path = '../../haarcascades/haarcascade_frontalface_alt.xml'
     face_cascade = cv2.CascadeClassifier(haar_cascade_path)
     if face_cascade.empty():
         raise IOError(f"Could not load Haar cascade file from {haar_cascade_path}")
 
+    return face_cascade
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Facial Landmarks Detection Example")
+    # parser.add_argument("-n", "--net", help="Path for the HEF model.", default="model/face-landmarks-detection.hef", required=False)
+    parser.add_argument("-n", "--net", help="Path for the HEF model.", default="model/face-landmarks-detection_float.hef", required=False)
+    parser.add_argument("-a", "--arch", help="Hailo architecture, h8, h15h", required=False)  # For future
+    args = parser.parse_args()
+
+    # Load the HEF model and Get input shape
+    hailo_inference = HailoInference(args.net, input_type="UINT8", output_type='FLOAT32')
+    input_height, input_width, _ = hailo_inference.get_input_shape()
+
+    cap = init_cv_cap()
+    face_cascade = init_cascade()
+
+
+
+    fps_start_time = 0
+    fps = 0
+    class_num = 136
     padding = 10
 
     while True:
@@ -65,18 +65,36 @@ def main():
             # Preprocess the face region
             preprocessed_face = preprocess_face_landmarks(face_roi, target_size=(input_height, input_width))
 
+            all_landmarks = []
+
             # Run inference
             results = hailo_inference.run(preprocessed_face)
-            results = results['face-landmarks-detection/fc1']
+            landmarks_batch = results['face-landmarks-detection/fc1']
 
-            # Scale and display landmarks
-            landmarks = results[0].reshape(-1, 2)
 
-            # Draw detected face region and landmarks
-            # cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
+            # Process each face's landmarks
+            for i, (x, y, w, h) in enumerate(faces):
+                # Reshape the landmarks for the current face
+                try:
+                    # Reshape to (num_landmarks, 2)
+                    landmarks = landmarks_batch[0].reshape(int(class_num / 2), 2)
+                except ValueError as e:
+                    raise ValueError(f"Error reshaping landmarks for face {i}: {e}")
 
-            for (lx, ly) in landmarks:
-                cv2.circle(frame, (x + lx, y + ly), 2, (0, 255, 0), -1)
+                # Adjust landmarks based on face position and size
+                # Adding 0.5 as in the example for potential alignment purposes
+                landmarks = (landmarks + 0.5) * np.array([[w, h]]) + np.array([[x, y]])
+
+                # Append the processed landmarks to the all_landmarks list
+                all_landmarks.append(landmarks)
+
+
+            # Draw landmarks on the frame
+            for landmarks in all_landmarks:
+                for (x, y) in landmarks:
+                    cv2.circle(frame, (int(x), int(y)), 1, (0, 255, 0), -1)
+
+
 
         # Display FPS
         cv2.putText(frame, f"FPS: {int(fps)}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (150, 150, 150), 2, cv2.LINE_AA)
