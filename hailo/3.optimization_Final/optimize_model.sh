@@ -34,8 +34,8 @@ fi
 input_file=$4
 
 echo -e "\n\e[33mOptimizing model\e[0m"
-
-hailo optimize --hw-arch "$hw_arch" --calib-set-path "$calib_set" --output-har-path "$output_path" "$input_file"
+mkdir "output"
+hailo optimize --hw-arch "$hw_arch" --calib-set-path "$calib_set" --work-dir $(pwd) --output-har-path "$output_path" "$input_file"
 rm *log
 
 echo -e "\n\e[32mModel $input_file optimized successfully\n\e[0m"

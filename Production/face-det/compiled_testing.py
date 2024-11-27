@@ -20,8 +20,7 @@ def init_cascade():
 
 def main():
     parser = argparse.ArgumentParser(description="Facial Landmarks Detection Example")
-    # parser.add_argument("-n", "--net", help="Path for the HEF model.", default="model/face-landmarks-detection.hef", required=False)
-    parser.add_argument("-n", "--net", help="Path for the HEF model.", default="model/face-landmarks-detection_float.hef", required=False)
+    parser.add_argument("-n", "--net", help="Path for the HEF model.", default="model/face-landmarks-detection.hef", required=False)
     parser.add_argument("-a", "--arch", help="Hailo architecture, h8, h15h", required=False)  # For future
     args = parser.parse_args()
 
@@ -33,11 +32,11 @@ def main():
     face_cascade = init_cascade()
 
 
-
     fps_start_time = 0
     fps = 0
     class_num = 136
     padding = 10
+
 
     while True:
         ret, frame = cap.read()

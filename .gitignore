@@ -11,4 +11,9 @@ diagrams
 *.onnx
 *.log
 *.env
+*.alls
+*.yaml
+*.npz
+*.hn
+*acceleras_full_flow*
 whisper.cpp
