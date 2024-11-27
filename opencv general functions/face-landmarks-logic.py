@@ -161,7 +161,7 @@ if __name__ == "__main__":
 #
 #
 # from drawing_util import draw_landmarks, draw_head_pose, display_fps
-# from processingUtil import estimate_head_pose, get_camera_intrinsics
+# from faceUtil import estimate_head_pose, get_camera_intrinsics
 # from processing_util import get_preprocessing_pipeline
 # from production.eyes_util import handle_eye_aspect_ratio
 # from production.loader_util import load_model, load_face_cascade
