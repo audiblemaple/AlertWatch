@@ -2,21 +2,45 @@ import cv2
 import numpy as np
 import scipy.special
 
+# def preprocess_faces(image, input_size=(640, 640)):
+#     """
+#     Preprocess the image: resize to (width, height) with padding to maintain aspect ratio.
+#     """
+#     img_h, img_w = image.shape[:2]
+#     input_w, input_h = input_size
+#     scale = min(input_w / img_w, input_h / img_h)
+#     new_w, new_h = int(img_w * scale), int(img_h * scale)
+#     resized_image = cv2.resize(image, (new_w, new_h), interpolation=cv2.INTER_LINEAR)
+#     padded_image = np.full((input_h, input_w, 3), 127, dtype=np.uint8)
+#     pad_w, pad_h = (input_w - new_w) // 2, (input_h - new_h) // 2
+#     padded_image[pad_h:pad_h + new_h, pad_w:pad_w + new_w, :] = resized_image
+#     return padded_image, scale, pad_w, pad_h, img_w, img_h  # Return original image dimensions
+
 def preprocess_faces(image, input_size=(640, 640)):
     """
     Preprocess the image: resize to (width, height) with padding to maintain aspect ratio.
     """
     img_h, img_w = image.shape[:2]
     input_w, input_h = input_size
-    scale = min(input_w / img_w, input_h / img_h)
-    new_w, new_h = int(img_w * scale), int(img_h * scale)
-    resized_image = cv2.resize(image, (new_w, new_h), interpolation=cv2.INTER_LINEAR)
-    padded_image = np.full((input_h, input_w, 3), 127, dtype=np.uint8)
-    pad_w, pad_h = (input_w - new_w) // 2, (input_h - new_h) // 2
-    padded_image[pad_h:pad_h + new_h, pad_w:pad_w + new_w, :] = resized_image
-    return padded_image, scale, pad_w, pad_h, img_w, img_h  # Return original image dimensions
 
-def postprocess_faces(outputs, img_w, img_h, scale, pad_w, pad_h, score_threshold=0.70, nms_threshold=0.4):
+    # Calculate scaling factor and new dimensions
+    scale = min(input_w / img_w, input_h / img_h)
+    new_w, new_h = round(img_w * scale), round(img_h * scale)
+
+    # Resize image
+    resized_image = cv2.resize(image, (new_w, new_h), interpolation=cv2.INTER_LINEAR)
+
+    # Pre-allocate output image with padding value
+    pad_w, pad_h = (input_w - new_w) // 2, (input_h - new_h) // 2
+    padded_image = np.full((input_h, input_w, 3), 127, dtype=np.uint8)
+
+    # Place resized image in the center
+    padded_image[pad_h:pad_h + new_h, pad_w:pad_w + new_w] = resized_image
+
+    return padded_image, scale, pad_w, pad_h, img_w, img_h
+
+
+def postprocess_faces(outputs, img_w, img_h, scale, pad_w, pad_h, score_threshold=0.65, nms_threshold=0.4):
     """
     Postprocess the model outputs to extract face bounding boxes from the medium scale (40x40).
     """
@@ -71,8 +95,6 @@ def postprocess_faces(outputs, img_w, img_h, scale, pad_w, pad_h, score_threshol
     variances = [0.1, 0.2]
     steps = [16]  # Medium scale step size
     min_sizes = [[64, 128]]  # Anchors for the medium scale
-    score_threshold = 0.65
-    nms_threshold = 0.4
 
     # Feature map sizes
     fm_sizes = [(input_size // step, input_size // step) for step in steps]
@@ -85,7 +107,6 @@ def postprocess_faces(outputs, img_w, img_h, scale, pad_w, pad_h, score_threshol
     cls_score = outputs['scrfd_10g/conv53'][0]  # Shape: [40, 40, 2]
 
     H, W, _ = bbox_pred.shape
-    num_anchors = 2  # Since bbox_pred has 8 channels and 4 values per box
 
     # Reshape bbox_pred
     bbox_pred = bbox_pred.reshape(-1, 4)  # [H*W*num_anchors, 4]
@@ -106,35 +127,22 @@ def postprocess_faces(outputs, img_w, img_h, scale, pad_w, pad_h, score_threshol
     # Decode bounding boxes
     boxes = decode_bboxes(bbox_pred, anchors, variances)
 
-    # print(boxes)
-    # print(input_size)
     # Adjust boxes to input_size coordinates
     boxes[:, 0] *= input_size  # x_min
     boxes[:, 1] *= input_size  # y_min
     boxes[:, 2] *= input_size  # x_max
     boxes[:, 3] *= input_size  # y_max
-    # print(boxes[:, 0] * input_size )
-    # print(boxes[:, 1] * input_size )
-    # print(boxes[:, 2] * input_size )
-    # print(boxes[:, 3] * input_size )
-    #
-    # print(pad_w, pad_h)
+
     # Remove padding to get boxes in resized image coordinates
     boxes[:, 0] -= pad_w
     boxes[:, 1] -= pad_h
     boxes[:, 2] -= pad_w
     boxes[:, 3] -= pad_h
 
-    boxes[:, 0] /= scale * 1.1
-    boxes[:, 1] /= scale * 1.0
-    boxes[:, 2] /= scale * 1.3
-    boxes[:, 3] /= scale * 1.3
-
-    # Clip coordinates to original image size
-    boxes[:, 0] = np.clip(boxes[:, 0], 0, img_w)
-    boxes[:, 1] = np.clip(boxes[:, 1], 0, img_h)
-    boxes[:, 2] = np.clip(boxes[:, 2], 0, img_w)
-    boxes[:, 3] = np.clip(boxes[:, 3], 0, img_h)
+    boxes[:, 0] /= scale * 1    # Left side   (bigger -> bigger)
+    boxes[:, 1] /= scale * 1    # Top side    (bigger -> bigger)
+    boxes[:, 2] /= scale * 1.25 # Right side  (bigger -> smaller)
+    boxes[:, 3] /= scale * 1.35 # Bottom side (bigger -> smaller)
 
     # Apply NMS
     boxes_xywh = boxes.copy()
@@ -172,6 +180,75 @@ def preprocess_face_landmarks(image, target_size=(224, 224), gray=True):
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#-----------------------------------------------------------------------------------------------------------------------
 # def preprocess_face_landmarks(image, target_size=(120, 120), gray=False):
 #     """
 #     Preprocess the input image for the TDDFA model.

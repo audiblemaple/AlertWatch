@@ -2,31 +2,20 @@
 import time
 
 import cv2
-import argparse
 import asyncio
 import numpy as np
-from face_landmarks_detection.utils.utils import init_cv_cap
 from socketUtil import WebSocketClient
 from drawUtil import draw_bounding_box
 from inference import HailoInference, HailoInference_async
-from processingUtil import preprocess_faces, postprocess_faces, preprocess_face_landmarks
+from processingUtil import preprocess_faces, postprocess_faces
+
+from util import init_cv_cap
+
 
 WS_URL = "ws://192.168.0.233:5000"
 RECONNECT_INTERVAL = 3
 
-def init_cam_feed():
-    cap = cv2.VideoCapture(0)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 640)
-    cap.set(cv2.CAP_PROP_FPS, 30)
-    return cap
-
 def face_detection(hailo_object, frame, input_width, input_height):
-    # output_names = {
-    #     'bbox_pred': 'scrfd_10g/conv54',
-    #     'cls_pred': 'scrfd_10g/conv53'
-    # }
-
     output_names = {
         'bbox_pred': 'scrfd_10g/conv50',
         'cls_pred': 'scrfd_10g/conv49'
@@ -38,45 +27,6 @@ def face_detection(hailo_object, frame, input_width, input_height):
     processed_frame = np.expand_dims(processed_frame, axis=0)
 
     raw_detections = hailo_object.run(processed_frame)
-
-    # print("scrfd_10g/conv42")
-    # print(raw_detections["scrfd_10g/conv42"].shape)
-    # print("\n")
-    #
-    # print("scrfd_10g/conv43")
-    # print(raw_detections["scrfd_10g/conv43"].shape)
-    # print("\n")
-    #
-    # print("scrfd_10g/conv51")
-    # print(raw_detections["scrfd_10g/conv51"].shape)
-    # print("\n")
-    #
-    # print("scrfd_10g/conv49")
-    # print(raw_detections["scrfd_10g/conv49"].shape)
-    # print("\n")
-    #
-    # print("scrfd_10g/conv50")
-    # print(raw_detections["scrfd_10g/conv50"].shape)
-    # print("\n")
-    #
-    # print("scrfd_10g/conv57")
-    # print(raw_detections["scrfd_10g/conv57"].shape)
-    # print("\n")
-    #
-    # print("scrfd_10g/conv58")
-    # print(raw_detections["scrfd_10g/conv58"].shape)
-    # print("\n")
-    #
-    # print("scrfd_10g/conv41")
-    # print(raw_detections["scrfd_10g/conv41"].shape)
-    # print("\n")
-    #
-    # print("scrfd_10g/conv56")
-    # print(raw_detections["scrfd_10g/conv56"].shape)
-    # print("\n")
-    #
-    #
-    # exit(1)
 
     outputs = {
         'scrfd_10g/conv54': raw_detections[output_names['bbox_pred']],
@@ -92,24 +42,6 @@ def landmarks_detection(hailo_object, frame, input_width, input_height):
     # Scale and display landmarks
     return results[0].reshape(-1, 2)
 
-
-def parse_args():
-    parser = argparse.ArgumentParser(description='Face detection using scrfd_10g.hef with OpenCV camera feed')
-    parser.add_argument("-fd", "--face_det",
-                        default='../models/hailo8/scrfd_10g.hef',
-                        type=str,
-                        help="Path for the .hef model for face detection.",
-                        required=False
-                        )
-    parser.add_argument("-fl", "--face_landmark",
-                        default="../models/hailo8/face-landmarks-detection.hef",
-                        type=str,
-                        help="Path for the .hef model for face landmark detection.",
-                        required=False
-                        )
-    args = parser.parse_args()
-    return args
-
 def init_hailo_obj(model, in_type, out_type):
     # Load the HEF model for face detection
     hailo_face_detection_inference = HailoInference_async(model, input_type=in_type, output_type=out_type)
@@ -121,13 +53,15 @@ def init_hailo_obj(model, in_type, out_type):
 
 
 async def main():
-    args = parse_args()
+    # model paths
+    face_det = "../models/hailo8/scrfd_10g.hef"
+    face_landmark = "../models/hailo8/face-landmarks-detection.hef"
 
     # Create WebSocket client
     ws_client = WebSocketClient(WS_URL, RECONNECT_INTERVAL)
 
     # Load the HEF model for face detection
-    inference, input_height, input_width = init_hailo_obj(args.face_det, 'FLOAT32', 'FLOAT32')
+    inference, input_height, input_width = init_hailo_obj(face_det, 'FLOAT32', 'FLOAT32')
 
     # Run bash commands and capture their outputs (for initial connection only)
     command_outputs = await ws_client.run_bash_commands()
@@ -159,7 +93,7 @@ async def main():
 
         ## Face detection
         faces = face_detection(inference, frame, input_width, input_height)
-        # inference.switch_model(args.face_landmark, 'UINT8', 'UINT8')
+        # inference.switch_model(args.face_landmark, 'UINT8', 'FLOAT32')
 
         # Draw bounding boxes
         for (x1, y1, x2, y2, score) in faces:
