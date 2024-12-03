@@ -40,7 +40,7 @@ def preprocess_faces(image, input_size=(640, 640)):
     return padded_image, scale, pad_w, pad_h, img_w, img_h
 
 
-def postprocess_faces(outputs, img_w, img_h, scale, pad_w, pad_h, score_threshold=0.65, nms_threshold=0.4):
+def postprocess_faces(outputs, img_w, img_h, scale, pad_w, pad_h, score_threshold=0.60, nms_threshold=0.4):
     """
     Postprocess the model outputs to extract face bounding boxes from the medium scale (40x40).
     """
@@ -139,10 +139,10 @@ def postprocess_faces(outputs, img_w, img_h, scale, pad_w, pad_h, score_threshol
     boxes[:, 2] -= pad_w
     boxes[:, 3] -= pad_h
 
-    boxes[:, 0] /= scale * 1    # Left side   (bigger -> bigger)
-    boxes[:, 1] /= scale * 1    # Top side    (bigger -> bigger)
-    boxes[:, 2] /= scale * 1.25 # Right side  (bigger -> smaller)
-    boxes[:, 3] /= scale * 1.35 # Bottom side (bigger -> smaller)
+    boxes[:, 0] /= scale * 1      # Left side   (bigger -> bigger)
+    boxes[:, 1] /= scale * 1        # Top side    (bigger -> bigger)
+    boxes[:, 2] /= scale * 1.25     # Right side  (bigger -> smaller)
+    boxes[:, 3] /= scale * 1.5     # Bottom side (bigger -> smaller)
 
     # Apply NMS
     boxes_xywh = boxes.copy()

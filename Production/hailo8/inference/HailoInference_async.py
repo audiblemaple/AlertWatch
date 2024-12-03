@@ -38,22 +38,6 @@ class HailoInference_async:
         output_vstream_info = self.hef.get_output_vstream_infos()
         return input_vstream_info, output_vstream_info
 
-    def switch_model(self, new_hef_path, input_type='UINT8', output_type='UINT8'):
-        """
-        Switch the model by reconfiguring the existing VDevice with a new HEF file.
-
-        Args:
-            new_hef_path (str): Path to the new HEF file.
-        """
-        # Release the current network group
-        self.target.release()
-
-        self.input_type = input_type
-        self.output_type = output_type
-        self.hef = HEF(new_hef_path)
-        self.target = VDevice()
-        self._configure_network_group()
-
     def get_input_shape(self):
         """Return the shape of the input layer."""
         return self.hef.get_input_vstream_infos()[0].shape
