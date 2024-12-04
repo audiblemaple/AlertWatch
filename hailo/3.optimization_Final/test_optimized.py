@@ -5,7 +5,7 @@ import numpy as np
 import cv2
 
 # Path to your optimized HAR file
-har_path = 'output/face-landmarks-detection-optimized.har'
+har_path = 'output/face-landmarks-detection-optimized-h8.har'
 
 # Load the HAR file into the ClientRunner
 runner = ClientRunner(har=har_path)

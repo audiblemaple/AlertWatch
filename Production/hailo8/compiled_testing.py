@@ -185,13 +185,28 @@ def main():
         for bbox in faces:
             # Process face and run inference
             preprocessed_face, adjusted_bbox = process_face(frame, bbox, input_shape)
+
+
+            # Display the preprocessed face
+            if preprocessed_face is not None:
+                # Reshape preprocessed face for display if needed
+                preprocessed_face_display = preprocessed_face.squeeze()  # Remove batch and channel dimensions if present
+                if len(preprocessed_face_display.shape) == 2:
+                    # Convert grayscale to BGR for consistent display with OpenCV
+                    preprocessed_face_display = cv2.cvtColor(preprocessed_face_display, cv2.COLOR_GRAY2BGR)
+                cv2.imshow('Preprocessed Face', preprocessed_face_display)
+            else:
+                print("preprocessed_face is None")
+                continue
+
             results = hailo_inference.run(preprocessed_face)
             landmarks_batch = results['face-landmarks-detection/fc1']
 
             try:
                 # Reshape and adjust landmarks
                 landmarks = landmarks_batch[0].reshape(class_num // 2, 2)
-                adjusted_landmarks = adjust_landmarks(landmarks, adjusted_bbox)
+                # adjusted_landmarks = adjust_landmarks(landmarks, adjusted_bbox)
+                adjusted_landmarks = adjust_landmarks(landmarks, bbox)
                 all_landmarks.append(adjusted_landmarks)
             except ValueError as e:
                 print(f"Error processing landmarks: {e}")
@@ -206,7 +221,6 @@ def main():
         frame, blink_counter, current_blink_start, blink_durations = process_ear_for_all_faces(
             all_landmarks, frame, frame_count, fps, blink_counter, current_blink_start, blink_durations
         )
-
 
         # Draw landmarks and head pose on the frame
         for landmarks, (rotation_vector, translation_vector), direction in zip(all_landmarks, head_poses, directions):

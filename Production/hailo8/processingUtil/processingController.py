@@ -2,19 +2,21 @@ import cv2
 import numpy as np
 import scipy.special
 
-# def preprocess_faces(image, input_size=(640, 640)):
-#     """
-#     Preprocess the image: resize to (width, height) with padding to maintain aspect ratio.
-#     """
-#     img_h, img_w = image.shape[:2]
-#     input_w, input_h = input_size
-#     scale = min(input_w / img_w, input_h / img_h)
-#     new_w, new_h = int(img_w * scale), int(img_h * scale)
-#     resized_image = cv2.resize(image, (new_w, new_h), interpolation=cv2.INTER_LINEAR)
-#     padded_image = np.full((input_h, input_w, 3), 127, dtype=np.uint8)
-#     pad_w, pad_h = (input_w - new_w) // 2, (input_h - new_h) // 2
-#     padded_image[pad_h:pad_h + new_h, pad_w:pad_w + new_w, :] = resized_image
-#     return padded_image, scale, pad_w, pad_h, img_w, img_h  # Return original image dimensions
+# Define the preprocessing function with uint8 output
+def preprocess_face_landmarks(image, target_size=(224, 224), gray=True):
+    if gray:
+        # Convert to grayscale
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+    # Resize image
+    resized_image = cv2.resize(image, target_size, interpolation=cv2.INTER_LINEAR)
+
+    # Expand dimensions to fit the model input
+    expanded_image = np.expand_dims(resized_image, axis=[0, -1])
+
+    # return expanded_image
+    return expanded_image
+
 
 def preprocess_faces(image, input_size=(640, 640)):
     """
@@ -40,31 +42,35 @@ def preprocess_faces(image, input_size=(640, 640)):
     return padded_image, scale, pad_w, pad_h, img_w, img_h
 
 
-def postprocess_faces(outputs, img_w, img_h, scale, pad_w, pad_h, score_threshold=0.60, nms_threshold=0.4):
+def postprocess_faces(outputs, img_w, img_h, scale, pad_w, pad_h, score_threshold=0.6, nms_threshold=0.4):
     """
     Postprocess the model outputs to extract face bounding boxes from the medium scale (40x40).
     """
 
     def decode_bboxes(bbox_pred, anchors, variances=[0.1, 0.2]):
-        # bbox_pred: [N, 4], anchors: [N, 4]
-        # anchors are in [cx, cy, w, h] format
-
-        # Compute center coordinates and size
+        """
+        Decode bounding boxes with center-offset and size scaling.
+        """
         boxes = np.zeros_like(bbox_pred)
 
+        # Center coordinates
         boxes[:, 0] = anchors[:, 0] + bbox_pred[:, 0] * variances[0] * anchors[:, 2]  # cx
         boxes[:, 1] = anchors[:, 1] + bbox_pred[:, 1] * variances[0] * anchors[:, 3]  # cy
+
+        # Size
         boxes[:, 2] = anchors[:, 2] * np.exp(bbox_pred[:, 2] * variances[1])  # w
         boxes[:, 3] = anchors[:, 3] * np.exp(bbox_pred[:, 3] * variances[1])  # h
 
         # Convert to corner coordinates
-        x_min = boxes[:, 0] - boxes[:, 2] / 2  # x_min
-        y_min = boxes[:, 1] - boxes[:, 3] / 2  # y_min
-        x_max = boxes[:, 0] + boxes[:, 2] / 2  # x_max
-        y_max = boxes[:, 1] + boxes[:, 3] / 2  # y_max
+        x_min = boxes[:, 0] - boxes[:, 2] / 2
+        y_min = boxes[:, 1] - boxes[:, 3] / 2
+        x_max = boxes[:, 0] + boxes[:, 2] / 2
+        y_max = boxes[:, 1] + boxes[:, 3] / 2
 
-        boxes = np.stack([x_min, y_min, x_max, y_max], axis=1)
-        return boxes
+        return np.stack([x_min, y_min, x_max, y_max], axis=1)
+
+
+
 
     def generate_anchors(fm_sizes, input_size, steps, min_sizes):
         anchors = []
@@ -89,6 +95,8 @@ def postprocess_faces(outputs, img_w, img_h, scale, pad_w, pad_h, score_threshol
             nms_threshold=nms_threshold
         )
         return indices.flatten() if len(indices) > 0 else []
+
+
 
     # Model parameters for the medium scale
     input_size = 640
@@ -139,10 +147,10 @@ def postprocess_faces(outputs, img_w, img_h, scale, pad_w, pad_h, score_threshol
     boxes[:, 2] -= pad_w
     boxes[:, 3] -= pad_h
 
-    boxes[:, 0] /= scale * 1      # Left side   (bigger -> bigger)
-    boxes[:, 1] /= scale * 1        # Top side    (bigger -> bigger)
+    boxes[:, 0] /= scale * 1.05      # Left side   (bigger -> bigger)
+    boxes[:, 1] /= scale * 0.9        # Top side    (bigger -> bigger)
     boxes[:, 2] /= scale * 1.25     # Right side  (bigger -> smaller)
-    boxes[:, 3] /= scale * 1.5     # Bottom side (bigger -> smaller)
+    boxes[:, 3] /= scale * 1.4     # Bottom side (bigger -> smaller)
 
     # Apply NMS
     boxes_xywh = boxes.copy()
@@ -163,20 +171,6 @@ def postprocess_faces(outputs, img_w, img_h, scale, pad_w, pad_h, score_threshol
     return results
 
 
-# Define the preprocessing function with uint8 output
-def preprocess_face_landmarks(image, target_size=(224, 224), gray=True):
-    if gray:
-        # Convert to grayscale
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-
-    # Resize image
-    resized_image = cv2.resize(image, target_size, interpolation=cv2.INTER_LINEAR)
-
-    # Expand dimensions to fit the model input
-    expanded_image = np.expand_dims(resized_image, axis=[0, -1])
-
-    # return expanded_image
-    return expanded_image
 
 
 
