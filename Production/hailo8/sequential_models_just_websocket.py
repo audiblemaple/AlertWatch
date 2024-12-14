@@ -8,7 +8,7 @@ from socketUtil import WebSocketClient
 from drawUtil import draw_bounding_box
 from inference import HailoInferenceAsyncMultiModel
 from hailo_platform import VDevice, HailoSchedulingAlgorithm, FormatType
-# from processingUtil import preprocess_faces, postprocess_faces, preprocess_face_landmarks
+# from prePostProcessing import preprocess_faces, postprocess_faces, preprocess_face_landmarks
 from processingUtil import *
 from util import init_cv_cap
 

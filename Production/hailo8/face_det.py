@@ -171,7 +171,7 @@ if __name__ == '__main__':
 # from socketUtil import WebSocketClient
 # from drawUtil import draw_bounding_box
 # from inference import HailoInference
-# from processingUtil import preprocess_faces, postprocess_faces, preprocess_face_landmarks
+# from prePostProcessing import preprocess_faces, postprocess_faces, preprocess_face_landmarks
 #
 # WS_URL = "ws://192.168.0.233:5000"
 # RECONNECT_INTERVAL = 3

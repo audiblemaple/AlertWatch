@@ -11,6 +11,8 @@ from inference import HailoInferenceAsyncMultiModel
 from processingUtil import preprocess_faces, postprocess_faces
 from util import init_cv_cap
 from dataclasses import dataclass, field
+import av  # NEW: PyAV for video encoding
+import websockets  # NEW: WebSockets for video streaming
 
 # Constants
 WS_URL = "ws://192.168.0.239:5000"
@@ -20,12 +22,21 @@ CLASS_NUM = 136
 
 # Blink Detection Constants
 EAR_THRESHOLD = 0.2  # Threshold to detect blink
-CONSEC_FRAMES = 2  # Number of consecutive frames the EAR should be below threshold
-BLINK_COUNT_THRESHOLD = 10  # Number of blinks to trigger video saving
+CONSEC_FRAMES = 3  # Number of consecutive frames the EAR should be below threshold
+BLINK_COUNT_THRESHOLD = 4  # Number of blinks to trigger video saving
 
 # Buffer Configuration
 BUFFER_DURATION = 15  # seconds
 
+# NEW: WebSocket Video Streaming Configuration
+VIDEO_WS_HOST = '0.0.0.0'
+VIDEO_WS_PORT = 8765
+VIDEO_FRAME_RATE = 30
+VIDEO_WIDTH = 640
+VIDEO_HEIGHT = 360
+VIDEO_ENCODER = 'h264_nvenc'  # Change based on your hardware (e.g., 'h264_qsv', 'h264_amf', 'libx264')
+# NEW: WebSocket Server for Video Streaming
+connected_video_clients = set()
 
 @dataclass
 class AppState:
@@ -243,24 +254,6 @@ def initialize_inference_models():
 
     return hailo_inference, face_detection_input_shape, face_landmarks_input_shape, face_land_output_name
 
-
-def initialize_video_capture(width=640, height=360):
-    """
-    Initializes video capture from the webcam.
-
-    Args:
-        width (int): Width of the video frame.
-        height (int): Height of the video frame.
-
-    Returns:
-        cv2.VideoCapture: The video capture object or None if failed.
-    """
-    cap = init_cv_cap(width, height)
-    if not cap.isOpened():
-        print("Error: Could not open webcam.")
-        return None
-    return cap
-
 async def handle_faces(faces, frame, hailo_inference, face_land_output_name, face_landmarks_input_shape, all_landmarks,
                        state: AppState, tensors):
     """
@@ -352,19 +345,10 @@ async def handle_faces(faces, frame, hailo_inference, face_land_output_name, fac
 
 
 async def process_frame(frame, hailo_inference, face_detection_input_shape, face_landmarks_input_shape,
-                        face_land_output_name, state: AppState):
+                        face_land_output_name, state: AppState, tensors, encoder, video_queue):
     """
-    Processes a single video frame: detects faces, detects landmarks, and prepares data for WebSocket.
-
-    Args:
-        frame (np.ndarray): The original video frame.
-        hailo_inference (HailoInferenceAsyncMultiModel): The inference model.
-        face_detection_input_shape (tuple): Input shape for face detection model.
-        face_landmarks_input_shape (tuple): Input shape for landmarks model.
-        face_land_output_name (str): The output name for landmarks.
-
-    Returns:
-        tuple: (processed_frame, tensors, all_landmarks)
+    Processes a single video frame: detects faces, detects landmarks, prepares data for WebSocket,
+    encodes the frame for video streaming.
     """
     preprocessed_frame, scale, pad_w, pad_h, img_w, img_h = preprocess_faces(
         frame, input_size=(face_detection_input_shape[0], face_detection_input_shape[1])
@@ -380,10 +364,24 @@ async def process_frame(frame, hailo_inference, face_detection_input_shape, face
     tensors = []
 
     if not faces:
+        # Encode the frame and put into video queue even if no faces
+        encoded_packet = encoder.encode(av.VideoFrame.from_ndarray(frame, format='bgr24'))
+        for packet in encoded_packet:
+            video_queue.put_nowait(packet.to_bytes())
         return frame, tensors, all_landmarks
 
     await handle_faces(faces, frame, hailo_inference, face_land_output_name, face_landmarks_input_shape, all_landmarks,
                       state, tensors)
+
+    # Encode the processed frame
+    # Convert BGR to RGB as PyAV expects RGB frames
+    frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    av_frame = av.VideoFrame.from_ndarray(frame_rgb, format='rgb24')
+    av_frame.pts = None  # Let encoder handle timestamps
+    packets = encoder.encode(av_frame)
+
+    for packet in packets:
+        video_queue.put_nowait(packet.to_bytes())
 
     return frame, tensors, all_landmarks
 
@@ -413,6 +411,52 @@ async def save_video(buffer, fps, output_path='output_blink_detected.avi'):
     print(f"Saved video to {output_path}")
 
 
+
+async def video_websocket_handler(websocket, path):
+    print(f"New video client connected: {websocket.remote_address}")
+    connected_video_clients.add(websocket)
+    try:
+        # Keep the connection open
+        await websocket.wait_closed()
+    finally:
+        connected_video_clients.remove(websocket)
+        print(f"Video client disconnected: {websocket.remote_address}")
+
+async def video_streamer(queue):
+    async with websockets.serve(video_websocket_handler, VIDEO_WS_HOST, VIDEO_WS_PORT, max_size=None, max_queue=None):
+        print(f"Video WebSocket server started at ws://{VIDEO_WS_HOST}:{VIDEO_WS_PORT}")
+        await asyncio.Future()  # Run forever
+
+# NEW: Initialize PyAV Encoder
+def initialize_encoder():
+    codec_name = VIDEO_ENCODER
+    try:
+        codec = av.codec.CodecContext.create(codec_name, 'w')
+    except Exception as e:
+        print(f"Failed to create encoder {codec_name}: {e}. Falling back to libx264.")
+        codec = av.codec.CodecContext.create('libx264', 'w')
+    codec.width = VIDEO_WIDTH
+    codec.height = VIDEO_HEIGHT
+    codec.framerate = VIDEO_FRAME_RATE
+    codec.time_base = av.Rational(1, VIDEO_FRAME_RATE)
+    codec.pix_fmt = 'yuv420p'
+    codec.options = {'preset': 'fast', 'tune': 'zerolatency'}
+    return codec
+
+async def send_encoded_frame(queue):
+    while True:
+        if connected_video_clients:
+            try:
+                frame = await queue.get()
+                # Broadcast to all connected clients
+                await asyncio.wait([client.send(frame) for client in connected_video_clients])
+            except Exception as e:
+                print(f"Error sending frame: {e}")
+        else:
+            # No clients connected, wait before checking again
+            await asyncio.sleep(0.1)
+
+
 async def main():
     # Initialize application state
     state = AppState()
@@ -420,7 +464,7 @@ async def main():
     # Initialize components
     ws_client = await initialize_websocket()
     hailo_inference, face_detection_input_shape, face_landmarks_input_shape, face_land_output_name = initialize_inference_models()
-    cap = initialize_video_capture(640, 360)
+    cap = init_cv_cap(640, 360)
     if cap is None:
         return
 
@@ -433,10 +477,23 @@ async def main():
 
     # Reset the video capture to start
     cap.release()
-    cap = initialize_video_capture(640, 360)
+    cap = init_cv_cap(640, 360)
     if cap is None:
         print("Error: Could not reopen webcam.")
         return
+
+
+    # Initialize PyAV encoder
+    encoder = initialize_encoder()
+
+    # Initialize video frame queue
+    video_frame_queue = asyncio.Queue()
+
+    # Start video WebSocket server
+    video_server = asyncio.create_task(video_streamer())
+
+    # Start video frame sender
+    video_sender = asyncio.create_task(send_encoded_frame(video_frame_queue))
 
     fps_start_time = time.time()
 
@@ -456,7 +513,8 @@ async def main():
 
         # Process the current frame
         processed_frame, tensors, all_landmarks = await process_frame(
-            frame, hailo_inference, face_detection_input_shape, face_landmarks_input_shape, face_land_output_name, state
+            frame, hailo_inference, face_detection_input_shape, face_landmarks_input_shape, face_land_output_name,
+            state, tensors=[], encoder=encoder, video_queue=video_frame_queue
         )
 
         # Draw landmarks on the frame
@@ -538,4 +596,7 @@ def estimate_fps(cap, warmup_frames=30):
 
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        print("Interrupted by user. Exiting...")

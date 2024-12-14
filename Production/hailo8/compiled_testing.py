@@ -9,7 +9,7 @@ Modules:
 - NumPy: For numerical operations on the landmarks.
 - util: Custom utility functions to initialize webcam and cascade.
 - inference: Wrapper for Hailo inference API.
-- processingUtil: For preprocessing input frames.
+- prePostProcessing: For preprocessing input frames.
 """
 
 import cv2
@@ -255,7 +255,7 @@ if __name__ == "__main__":
 # - NumPy: For numerical operations on the landmarks.
 # - util: Custom utility functions to initialize webcam and cascade.
 # - inference: Wrapper for Hailo inference API.
-# - processingUtil: For preprocessing input frames.
+# - prePostProcessing: For preprocessing input frames.
 # """
 #
 # import cv2
@@ -263,7 +263,7 @@ if __name__ == "__main__":
 # import numpy as np
 # from util import init_cv_cap, init_cascade
 # from inference import HailoInference
-# from processingUtil import preprocess_face_landmarks
+# from prePostProcessing import preprocess_face_landmarks
 #
 #
 # def initialize_hailo_inference(model_path, input_type="UINT8", output_type="FLOAT32"):
@@ -440,7 +440,7 @@ if __name__ == "__main__":
 # - NumPy: For numerical operations.
 # - util: Custom utility functions to initialize webcam and cascade.
 # - inference: Wrapper for Hailo inference API.
-# - processingUtil: For preprocessing input frames.
+# - prePostProcessing: For preprocessing input frames.
 # """
 # import cv2
 # import time
@@ -449,7 +449,7 @@ if __name__ == "__main__":
 #
 # from util import init_cv_cap, init_cascade
 # from inference import HailoInference
-# from processingUtil import preprocess_face_landmarks
+# from prePostProcessing import preprocess_face_landmarks
 #
 #
 # def main():
