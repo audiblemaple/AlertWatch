@@ -1,45 +1,34 @@
-# websocket_utils.py
+# socketUtil/websocketController.py
 
-import asyncio
-import websockets
 import json
 import base64
-import subprocess
 import cv2
+import websockets
+import asyncio
 
 class WebSocketClient:
-    def __init__(self, url, reconnect_interval=3):
-        self.url = url
+    def __init__(self, ws_url, reconnect_interval=2):
+        self.ws_url = ws_url
         self.reconnect_interval = reconnect_interval
         self.websocket = None
         self.first_connection = True
 
     async def connect(self):
-        """Try to connect to the WebSocket server and return the connection if successful."""
-        while True:
+        while self.websocket is None:
             try:
-                self.websocket = await websockets.connect(self.url)
-                print("Connected to WebSocket server.")
-                return self.websocket
+                self.websocket = await websockets.connect(self.ws_url)
+                print("WebSocket connection established.")
             except Exception as e:
-                print(f"Warning: Unable to connect to WebSocket server: {e}")
-                print(f"Reattempting connection in {self.reconnect_interval} seconds...")
+                print(f"Connection failed: {e}. Retrying in {self.reconnect_interval} seconds.")
                 await asyncio.sleep(self.reconnect_interval)
 
     async def run_bash_commands(self):
         """
-        Run a list of bash commands and return their outputs.
+        Placeholder for running initial bash commands.
+        Replace this method's content with actual bash command executions if needed.
         """
-        commands = [
-            "uname -a",
-            "hailortcli fw-control identify"
-        ]
-        outputs = []
-        for command in commands:
-            result = subprocess.run(command, shell=True, capture_output=True, text=True)
-            outputs.append(result.stdout.strip())
-
-        return outputs
+        # Example: return {"command_output": "success"}
+        return {"command_output": "initial_commands_executed"}
 
     async def send_data(self, frame, tensors, command_outputs=None):
         if self.websocket is None:
@@ -56,7 +45,7 @@ class WebSocketClient:
                 'msgData': {
                     'frame': frame_base64,
                     'face_tensors': tensors,
-                    'face_landmark_tensors': None
+                    'face_landmark_tensors': None  # Update if you have landmark tensors
                 }
             }
             if command_outputs is not None:

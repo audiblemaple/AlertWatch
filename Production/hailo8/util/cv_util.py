@@ -9,8 +9,10 @@ def init_cv_cap(width=640, height=640, fps=30):
 
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+    # cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
     cap.set(cv2.CAP_PROP_FPS, fps)
     return cap
+
 
 
 def init_cascade():

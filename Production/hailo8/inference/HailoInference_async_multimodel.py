@@ -1,7 +1,7 @@
 from hailo_platform import HEF, VDevice, HailoStreamInterface, ConfigureParams, InferVStreams, InputVStreamParams, \
     OutputVStreamParams, FormatType
 import numpy as np
-
+import subprocess
 
 class HailoInferenceAsyncMultiModel:
     def __init__(self, model_paths, input_types=('UINT8', 'UINT8'), output_types=('UINT8', 'UINT8')):
@@ -20,12 +20,42 @@ class HailoInferenceAsyncMultiModel:
         for i, (hef_path, input_type, output_type) in enumerate(zip(model_paths, input_types, output_types)):
             self.models[f'model_{i + 1}'] = self._load_model(hef_path, input_type, output_type)
 
+    def _get_hailo_architecture(self):
+        try:
+            # Run the hailortcli command and capture the output
+            result = subprocess.run(
+                ["hailortcli", "fw-control", "identify"],
+                capture_output=True,
+                text=True
+            )
+
+            # Check if the command executed successfully
+            if result.returncode != 0:
+                print(f"Error executing command: {result.stderr}")
+                return None
+
+            # Parse the output to find the architecture
+            for line in result.stdout.splitlines():
+                if "Device Architecture:" in line:
+                    architecture = line.split(":")[1].strip()
+                    if architecture == "HAILO8":
+                        return HailoStreamInterface.PCIe
+                    elif architecture == "HAILO15H":
+                        return HailoStreamInterface.INTEGRATED
+
+            return "Device Architecture not found in output."
+        except Exception as e:
+            return f"An error occurred: {e}"
+
     def _load_model(self, hef_path, input_type, output_type):
         """
         Load a model and configure its network group.
         """
         hef = HEF(hef_path)
-        configure_params = ConfigureParams.create_from_hef(hef, interface=HailoStreamInterface.PCIe)
+
+        architecture = self._get_hailo_architecture()
+
+        configure_params = ConfigureParams.create_from_hef(hef, interface=architecture)
         network_group = self.target.configure(hef, configure_params)[0]
 
         # Create vstream parameters
