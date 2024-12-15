@@ -2,86 +2,151 @@ import cv2
 import numpy as np
 
 
+# def preprocess_face_landmarks(frame, bbox, input_shape, gray=True):
+#     """
+#     Preprocesses the face ROI for landmark detection.
+#
+#     Args:
+#         frame (np.ndarray): The original video frame.
+#         bbox (tuple): Bounding box of the face (x1, y1, x2, y2).
+#         input_shape (tuple): The target input shape for the model.
+#         gray (bool): Whether to convert the face ROI to grayscale.
+#
+#     Returns:
+#         tuple: (preprocessed_face, adjusted_bbox) or (None, bbox) if invalid.
+#     """
+#     x1, y1, x2, y2 = bbox
+#
+#     # Ensure the coordinates are integers and within image bounds
+#     x1 = max(0, int(round(x1)))
+#     y1 = max(0, int(round(y1)))
+#     x2 = min(frame.shape[1], int(round(x2)))
+#     y2 = min(frame.shape[0], int(round(y2)))
+#
+#     # Validate bounding box dimensions
+#     if x2 <= x1 or y2 <= y1:
+#         return None, bbox
+#
+#     face_roi = frame[y1:y2, x1:x2]
+#
+#     if face_roi.size == 0:
+#         return None, bbox
+#
+#     if gray:
+#         # Convert to grayscale
+#         face_roi = cv2.cvtColor(face_roi, cv2.COLOR_BGR2GRAY)
+#
+#     # Original face ROI dimensions
+#     face_h, face_w = face_roi.shape[:2]
+#     target_h, target_w = input_shape[:2]
+#
+#     # Validate face ROI dimensions
+#     if face_w <= 0 or face_h <= 0:
+#         return None, bbox
+#
+#     # Calculate scaling factor to ensure the resized image is at least as big as the target size
+#     scale = max(target_w / face_w, target_h / face_h)
+#
+#     # New dimensions after scaling
+#     new_w = int(face_w * scale)
+#     new_h = int(face_h * scale)
+#
+#     # Validate new dimensions
+#     if new_w <= 0 or new_h <= 0:
+#         return None, bbox
+#
+#     # Resize the face ROI
+#     resized_face = cv2.resize(face_roi, (new_w, new_h), interpolation=cv2.INTER_NEAREST)
+#
+#     # Calculate offsets to crop the center part
+#     x_offset = (new_w - target_w) // 2
+#     y_offset = (new_h - target_h) // 2
+#
+#     # Handle cases where the resized image is smaller than the target size
+#     preprocessed_face = np.zeros((target_h, target_w), dtype=resized_face.dtype)
+#
+#     x_start = max(0, -x_offset)
+#     y_start = max(0, -y_offset)
+#     x_end = x_start + min(new_w, target_w)
+#     y_end = y_start + min(new_h, target_h)
+#
+#     resized_x_start = max(0, x_offset)
+#     resized_y_start = max(0, y_offset)
+#     resized_x_end = resized_x_start + (x_end - x_start)
+#     resized_y_end = resized_y_start + (y_end - y_start)
+#
+#     preprocessed_face[y_start:y_end, x_start:x_end] = resized_face[resized_y_start:resized_y_end,
+#                                                       resized_x_start:resized_x_end]
+#
+#     # Expand dimensions to fit model input
+#     if gray:
+#         preprocessed_face = preprocessed_face[np.newaxis, :, :, np.newaxis]
+#     else:
+#         preprocessed_face = preprocessed_face[np.newaxis, :, :, :]
+#
+#     return preprocessed_face, bbox
+
 def preprocess_face_landmarks(frame, bbox, input_shape, gray=True):
     """
     Preprocesses the face ROI for landmark detection.
 
     Args:
-        frame (np.ndarray): The original video frame.
+        frame (np.ndarray): The original video frame, BGR format.
         bbox (tuple): Bounding box of the face (x1, y1, x2, y2).
-        input_shape (tuple): The target input shape for the model.
+        input_shape (tuple): The target input shape for the model (H, W, ...).
         gray (bool): Whether to convert the face ROI to grayscale.
 
     Returns:
         tuple: (preprocessed_face, adjusted_bbox) or (None, bbox) if invalid.
     """
     x1, y1, x2, y2 = bbox
+    height, width = frame.shape[:2]
+    target_h, target_w = input_shape[:2]
 
-    # Ensure the coordinates are integers and within image bounds
+    # Ensure coordinates are within frame boundaries
     x1 = max(0, int(round(x1)))
     y1 = max(0, int(round(y1)))
-    x2 = min(frame.shape[1], int(round(x2)))
-    y2 = min(frame.shape[0], int(round(y2)))
+    x2 = min(width, int(round(x2)))
+    y2 = min(height, int(round(y2)))
 
-    # Validate bounding box dimensions
+    # Validate bounding box
     if x2 <= x1 or y2 <= y1:
         return None, bbox
 
     face_roi = frame[y1:y2, x1:x2]
-
     if face_roi.size == 0:
         return None, bbox
 
+    # Convert to grayscale if needed
     if gray:
-        # Convert to grayscale
         face_roi = cv2.cvtColor(face_roi, cv2.COLOR_BGR2GRAY)
 
-    # Original face ROI dimensions
     face_h, face_w = face_roi.shape[:2]
-    target_h, target_w = input_shape[:2]
-
-    # Validate face ROI dimensions
-    if face_w <= 0 or face_h <= 0:
+    if face_h == 0 or face_w == 0:
         return None, bbox
 
-    # Calculate scaling factor to ensure the resized image is at least as big as the target size
+    # Calculate scale to make sure resized face >= target size
     scale = max(target_w / face_w, target_h / face_h)
 
-    # New dimensions after scaling
     new_w = int(face_w * scale)
     new_h = int(face_h * scale)
 
-    # Validate new dimensions
-    if new_w <= 0 or new_h <= 0:
-        return None, bbox
+    # Resize (INTER_NEAREST is very fast)
+    resized_face = cv2.resize(face_roi, (new_w, new_h), interpolation=cv2.INTER_NEAREST)
 
-    # Resize the face ROI
-    resized_face = cv2.resize(face_roi, (new_w, new_h), interpolation=cv2.INTER_LINEAR)
+    # Center crop the resized image to the target size
+    start_x = (new_w - target_w) // 2
+    start_y = (new_h - target_h) // 2
+    preprocessed_face = resized_face[start_y:start_y + target_h, start_x:start_x + target_w]
 
-    # Calculate offsets to crop the center part
-    x_offset = (new_w - target_w) // 2
-    y_offset = (new_h - target_h) // 2
-
-    # Handle cases where the resized image is smaller than the target size
-    preprocessed_face = np.zeros((target_h, target_w), dtype=resized_face.dtype)
-
-    x_start = max(0, -x_offset)
-    y_start = max(0, -y_offset)
-    x_end = x_start + min(new_w, target_w)
-    y_end = y_start + min(new_h, target_h)
-
-    resized_x_start = max(0, x_offset)
-    resized_y_start = max(0, y_offset)
-    resized_x_end = resized_x_start + (x_end - x_start)
-    resized_y_end = resized_y_start + (y_end - y_start)
-
-    preprocessed_face[y_start:y_end, x_start:x_end] = resized_face[resized_y_start:resized_y_end,
-                                                      resized_x_start:resized_x_end]
-
-    # Expand dimensions to fit model input
+    # Add batch dimension and channel dimension if needed
     if gray:
+        # Shape: (1, H, W, 1)
         preprocessed_face = preprocessed_face[np.newaxis, :, :, np.newaxis]
     else:
+        # For color images, ensure shape: (1, H, W, C)
+        if preprocessed_face.ndim == 2:
+            preprocessed_face = preprocessed_face[:, :, np.newaxis]
         preprocessed_face = preprocessed_face[np.newaxis, :, :, :]
 
     return preprocessed_face, bbox
@@ -297,9 +362,9 @@ def postprocess_faces(outputs, img_w, img_h, scale, pad_w, pad_h, score_threshol
 
     # Adjust for scale
     boxes[:, 1] /= scale * 1.5  # Top side
-    boxes[:, 3] /= scale * 1.55  # Bottom side
+    boxes[:, 3] /= scale * 1.65  # Bottom side
     boxes[:, 0] /= scale * 1.05  # Left side
-    boxes[:, 2] /= scale * 1.4  # Right side
+    boxes[:, 2] /= scale * 1.35  # Right side
 
     # Apply NMS
     boxes_xywh = boxes.copy()

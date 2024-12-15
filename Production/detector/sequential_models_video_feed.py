@@ -2,39 +2,46 @@
 # !/usr/bin/env python3
 
 import time
+import datetime
 import cv2
 import asyncio
 import numpy as np
+import threading
 import os
 
 from collections import deque
-from appState   import AppState
+from appState import AppState
+from playsound import playsound
 
 from socketUtil import initialize_websocket
-from inference  import initialize_inference_models
-from logger     import initialize_logging
-from util       import init_cv_cap, estimate_fps, handle_blink_detection, handle_drowsiness_detection, process_bounding_box, run_landmark_inference
-from drawUtil   import draw_bounding_box, display_fps, draw_landmarks, display_blink_info
+from inference import initialize_inference_models
+from logger import initialize_logging, log_data
+from util import init_cv_cap, calculate_EAR, estimate_fps, save_video_sync, save_video
+from drawUtil import draw_bounding_box, display_fps, draw_landmarks, display_blink_info
 from prePostProcessing import preprocess_face_detection, postprocess_faces, preprocess_face_landmarks, adjust_landmarks
 
-''' Constants '''
+# Constants
 WS_URL: str = "ws://192.168.0.239:5000"
 RECONNECT_INTERVAL: int = 2
 FACE_SIZE: int = 165
-CLASS_NUM: int = 136 >> 1
+CLASS_NUM: int = 136
 
-''' Blink Detection Constants '''
+# Blink Detection Constants
 EAR_THRESHOLD: float = 0.21  # Threshold to detect blink
 CONSEC_FRAMES: int = 2  # Number of consecutive frames the EAR should be below threshold
 
-''' Buffer Configuration '''
+# Buffer Configuration
 BUFFER_DURATION: int = 30  # seconds
 
-''' Frames to skip when detecting faces '''
-FRAMES_TO_SKIP = 3
 
 FACES = None
 FRAME = 0
+# Function to play alert sound
+def play_alert_sound():
+    try:
+        playsound('alert.wav')  # Ensure you have an 'alert.wav' file in your project directory
+    except Exception as e:
+        print(f"Error playing sound: {e}")
 
 
 # Utility function to ensure directory exists
@@ -43,43 +50,117 @@ def ensure_directory_exists(directory: str):
         os.makedirs(directory)
         print(f"Created directory: {directory}")
 
+
+# Handle faces function with drowsiness detection and delayed video saving
 async def handle_faces(faces, frame, hailo_inference, face_land_output_name, face_landmarks_input_shape, all_landmarks,
                        state: AppState, tensors):
-    for face in faces:
-        x1, y1, adjusted_x2, adjusted_y2, x2, y2, score = process_bounding_box(face, frame, FACE_SIZE)
+    for (x1, y1, x2, y2, score) in faces:
+        # Clip bounding box coordinates and convert to int
+        x1 = max(0, int(x1))
+        y1 = max(0, int(y1))
+        x2 = min(frame.shape[1], int(x2))
+        y2 = min(frame.shape[0], int(y2) - 10)
+
+        adjusted_x2 = x2 - FACE_SIZE
+        adjusted_y2 = y2 - FACE_SIZE
+
         draw_bounding_box(frame, score, (adjusted_x2, adjusted_y2), (x2, y2))
 
         preprocessed_face, adjusted_bbox = preprocess_face_landmarks(
             frame, (adjusted_x2, adjusted_y2, x2, y2), face_landmarks_input_shape
         )
+
         if preprocessed_face is None:
             print("Preprocessed face is None. Skipping...")
             continue
 
-        # Run Landmark Inference
-        landmarks = run_landmark_inference(hailo_inference, preprocessed_face, face_land_output_name, CLASS_NUM)
-        if landmarks is None:
+        ''' Running inference for Face Landmarks Detection '''
+        landmarks = hailo_inference.run(model_id=2, input_data=preprocessed_face)
+
+        landmarks_batch = landmarks.get(face_land_output_name, None)
+        if landmarks_batch is None:
             print("Landmarks batch is None. Skipping...")
             continue
 
         try:
+            # Reshape and adjust landmarks
+            landmarks = landmarks_batch[0].reshape(CLASS_NUM // 2, 2)
             adjusted_landmarks = adjust_landmarks(landmarks, (adjusted_x2, adjusted_y2, FACE_SIZE, FACE_SIZE))
             all_landmarks.append(adjusted_landmarks)
 
             # Blink Detection
+            # Assuming landmarks are ordered and follow the 68-point model
+            # Left eye indices: 42-47, Right eye indices: 36-41 (0-based)
+            # Adjust indices based on your landmark model if different
             left_eye = adjusted_landmarks[42:48]
             right_eye = adjusted_landmarks[36:42]
-            avg_EAR = handle_blink_detection(left_eye, right_eye, state, EAR_THRESHOLD, CONSEC_FRAMES)
 
-            # Optionally, display EAR
+            left_EAR = calculate_EAR(left_eye)
+            right_EAR = calculate_EAR(right_eye)
+            avg_EAR = (left_EAR + right_EAR) / 2.0
+
+            # Update current EAR in state for delayed save check
+            state.current_EAR = avg_EAR
+
+            if avg_EAR < EAR_THRESHOLD:
+                state.EAR_consec_frames += 1
+                if not state.is_blinking:
+                    state.is_blinking = True
+                    state.current_blink_start = time.time()
+            else:
+                if state.EAR_consec_frames >= CONSEC_FRAMES:
+                    state.blink_counter += 1
+                    state.total_blinks += 1
+                    state.blink_timestamps.append(time.time())  # Record blink time for rate calculation
+                    if state.is_blinking:
+                        blink_duration = time.time() - state.current_blink_start
+                        state.blink_durations.append(blink_duration)
+                        print(f"Blink {state.total_blinks}: Duration = {blink_duration:.3f} seconds")
+                state.EAR_consec_frames = 0
+                state.is_blinking = False
+
+            # Optionally, display EAR on frame for debugging
             cv2.putText(frame, f"EAR: {avg_EAR:.2f}", (10, 60),
                         cv2.FONT_HERSHEY_SIMPLEX, 1, (100, 250, 100), 2, cv2.LINE_AA)
 
             # Drowsiness Detection
-            handle_drowsiness_detection(avg_EAR, state, frame)
+            drowsy, reasons = state.is_drowsy(avg_EAR, state.current_blink_start if state.is_blinking else 0)
+            if drowsy:
+                current_time = time.time()
+
+                # Handle Video Saving with Delay
+                with state.video_lock:
+                    if current_time - state.last_video_time >= state.debounce_time_video:
+                        timestamp = datetime.datetime.now()
+                        # Ensure the 'videos' directory exists
+                        output_filename = f"videos/blink_detected_{timestamp.strftime('%Y-%m-%d_%H-%M-%S')}.avi"
+                        # Schedule the delayed_save_video coroutine
+                        save_video_sync(state.frame_buffer, state.fps, output_filename)
+
+                        # Update the last alert time
+                        state.last_video_time = current_time
+
+
+                # Handle Alerting
+                with state.alert_lock:
+                    if current_time - state.last_alert_time >= state.debounce_time_alert:
+                        # Trigger visual alert
+                        cv2.putText(frame, "DROWSINESS DETECTED!", (10, 100),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
+                        print(f"Drowsiness Alert: {', '.join(reasons)}")
+
+                        # Trigger auditory alert
+                        threading.Thread(target=play_alert_sound, daemon=True).start()
+
+                        # Update the last alert time
+                        state.last_alert_time = current_time
+
+                        # Log the drowsiness event
+                        log_data(state, drowsy, reasons)
 
         except ValueError as ve:
             print(f"ValueError during landmarks processing: {ve}")
+            continue
         except Exception as e:
             print(f"Unexpected error: {e}")
             continue
@@ -94,9 +175,9 @@ async def handle_faces(faces, frame, hailo_inference, face_land_output_name, fac
         })
 
 
-
 # Process a single frame
-async def get_faces(frame, hailo_inference, face_detection_input_shape):
+async def process_frame(frame, hailo_inference, face_detection_input_shape, face_landmarks_input_shape,
+                        face_land_output_name, state: AppState):
     """
     Processes a single video frame: detects faces, detects landmarks, and prepares data for WebSocket.
 
@@ -110,34 +191,51 @@ async def get_faces(frame, hailo_inference, face_detection_input_shape):
     Returns:
         tuple: (processed_frame, tensors, all_landmarks)
     """
+    global FACES, FRAME
     preprocessed_frame, scale, pad_w, pad_h, img_w, img_h = preprocess_face_detection(
         frame, input_size=(face_detection_input_shape[0], face_detection_input_shape[1])
     )
     preprocessed_frame = preprocessed_frame.astype(np.float32)
     preprocessed_frame = preprocessed_frame[np.newaxis, :, :, :]
 
-    ''' Running inference for face detection '''
-    raw_faces = hailo_inference.run(model_id=1, input_data=preprocessed_frame)
-    return postprocess_faces(raw_faces, img_w, img_h, scale, pad_w, pad_h)
+    if FACES is None or FRAME % 3 == 0:
+        ''' Running inference for face detection '''
+        raw_faces = hailo_inference.run(model_id=1, input_data=preprocessed_frame)
+        faces = postprocess_faces(raw_faces, img_w, img_h, scale, pad_w, pad_h)
+        FACES = faces
+    else:
+        faces = FACES
 
-'''Main function'''
+    all_landmarks = []
+    tensors = []
+
+    if not faces:
+        print("No faces detected in this frame.")
+        return frame, tensors, all_landmarks
+
+    await handle_faces(faces, frame, hailo_inference, face_land_output_name, face_landmarks_input_shape, all_landmarks,
+                       state, tensors)
+
+    return frame, tensors, all_landmarks
+
+# Main function
 async def main():
     global FRAME
 
-    '''Initialize analysis logging'''
+    # Initialize analysis logging
     initialize_logging()
 
-    '''HEF paths for the models'''
+    # HEF paths for the models
     face_det = "../models/hailo8/scrfd_10g.hef"
     face_landmarks = "../models/hailo8/face-landmarks-detection.hef"
 
-    '''Initialize application state'''
+    # Initialize application state
     state = AppState()
 
-    '''Ensure the 'videos' directory exists'''
+    # Ensure the 'videos' directory exists
     ensure_directory_exists('videos')
 
-    '''Initialize components'''
+    # Initialize components
     ws_client = await initialize_websocket(WS_URL, RECONNECT_INTERVAL)
     hailo_inference, face_detection_input_shape, face_landmarks_input_shape, face_land_output_name = initialize_inference_models(
         face_det, face_landmarks)
@@ -146,7 +244,7 @@ async def main():
         print("Error: Could not initialize video capture.")
         return
 
-    '''Estimate FPS and set buffer size accordingly'''
+    # Estimate FPS and set buffer size accordingly
     estimated_fps = estimate_fps(cap, warmup_frames=120)
     state.fps = estimated_fps
     state.buffer_size = int(estimated_fps * BUFFER_DURATION)
@@ -155,8 +253,8 @@ async def main():
 
     # Reset the video capture to start
     cap.release()
-    # cap = init_cv_cap(640, 360)
-    cap = init_cv_cap(640, 360, 60, "videos/video.mp4")
+    cap = init_cv_cap(640, 360)
+    # cap = init_cv_cap(640, 360, 60, "videos/video.mp4")
     if cap is None:
         print("Error: Could not reopen webcam.")
         return
@@ -165,8 +263,7 @@ async def main():
     fps_start_time = time.time()  # Start time for current FPS
     total_start_time = time.time()  # Start time for average FPS
     total_frames = 0  # Total frames processed
-
-    face_buff = None
+    total_time = 0  # Total elapsed time
 
     while True:
         ret, frame = cap.read()
@@ -177,47 +274,36 @@ async def main():
         FRAME += 1
         total_frames += 1  # Increment total frame count
 
-        '''Add frame to buffer'''
-        state.frame_buffer.append(frame.copy())
 
-        '''Calculate FPS'''
+        # Add frame to buffer
+        state.frame_buffer.append(frame.copy())
+        # print(f"Added frame to buffer. Current buffer size: {len(state.frame_buffer)}")
+
+        # Calculate FPS
         fps_end_time = time.time()
         time_diff = fps_end_time - fps_start_time
         total_time = fps_end_time - total_start_time  # Total elapsed time
         state.fps = 1 / time_diff if time_diff > 0 else state.fps
         fps_start_time = fps_end_time
 
-        '''Calculate average FPS'''
+        # Calculate average FPS
         avg_fps = total_frames / total_time if total_time > 0 else 0
 
-        if total_frames % FRAMES_TO_SKIP == 0:
-            '''Process the current frame'''
-            faces = await get_faces(
-                frame, hailo_inference, face_detection_input_shape)
-            face_buff = faces
-        else:
-            faces = face_buff
+        # Process the current frame
+        processed_frame, tensors, all_landmarks = await process_frame(
+            frame, hailo_inference, face_detection_input_shape, face_landmarks_input_shape, face_land_output_name, state
+        )
 
-        if not faces:
-            continue
+        # Draw landmarks on the frame
+        draw_landmarks(processed_frame, all_landmarks)
 
-        all_landmarks = []
-        tensors = []
+        # Display FPS
+        display_fps(processed_frame, state.fps, avg_fps)
 
-        ''' Analyze face '''
-        await handle_faces(faces, frame, hailo_inference, face_land_output_name, face_landmarks_input_shape,
-                           all_landmarks, state, tensors)
+        # Display Blink Info
+        display_blink_info(processed_frame, state.blink_counter, state.total_blinks, state.blink_durations)
 
-        ''' Draw landmarks on the frame '''
-        draw_landmarks(frame, all_landmarks)
-
-        ''' Display FPS '''
-        display_fps(frame, state.fps, avg_fps)
-
-        ''' Display Blink Info '''
-        display_blink_info(frame, state.blink_counter, state.total_blinks, state.blink_durations)
-
-        ''' Attempt reconnection if WebSocket is not connected '''
+        # Attempt reconnection if WebSocket is not connected
         if ws_client.websocket is None:
             ws_client.first_connection = True
             await ws_client.connect()
@@ -226,32 +312,32 @@ async def main():
                 await asyncio.sleep(RECONNECT_INTERVAL)
                 continue
 
-        '''Send data via WebSocket'''
+        # Send data via WebSocket
         if ws_client.first_connection:
-            '''Prepare command outputs if needed'''
+            # Prepare command outputs if needed
             command_outputs = await ws_client.run_bash_commands()
 
-            '''Send the data'''
-            await ws_client.send_data(frame, tensors, command_outputs)
+            # Send the data
+            await ws_client.send_data(processed_frame, tensors, command_outputs)
             ws_client.first_connection = False
         else:
-            '''Send the data without command outputs'''
-            await ws_client.send_data(frame, tensors, command_outputs=None)
+            # Send the data without command outputs
+            await ws_client.send_data(processed_frame, tensors, command_outputs=None)
 
-        '''Show the frame with landmarks'''
-        cv2.imshow('Webcam Face Landmarks', frame)
+        # Show the frame with landmarks
+        cv2.imshow('Webcam Face Landmarks', processed_frame)
 
-        '''Check for 'q' key to quit'''
+        # Check for 'q' key to quit
         if cv2.waitKey(1) & 0xFF == ord('q'):
             print("Quitting...")
             break
 
-    '''Release resources'''
+    # Release resources
     cap.release()
     cv2.destroyAllWindows()
 
 
-'''Post-analysis function'''
+# Optional: Post-analysis function (if needed)
 def analyze_logs(filename='drowsiness_log.csv'):
     try:
         import pandas as pd
@@ -260,7 +346,7 @@ def analyze_logs(filename='drowsiness_log.csv'):
         df = pd.read_csv(filename, parse_dates=['Timestamp'])
         df.set_index('Timestamp', inplace=True)
 
-        '''Plot Blink Rate Over Time'''
+        # Plot Blink Rate Over Time
         plt.figure(figsize=(10, 5))
         plt.plot(df.index, df['Blink Rate (blinks/min)'], label='Blink Rate')
         plt.axhline(y=15, color='r', linestyle='--', label='Blink Rate Threshold')
@@ -270,7 +356,7 @@ def analyze_logs(filename='drowsiness_log.csv'):
         plt.legend()
         plt.show()
 
-        '''Plot Average Blink Duration Over Time'''
+        # Plot Average Blink Duration Over Time
         plt.figure(figsize=(10, 5))
         plt.plot(df.index, df['Average Blink Duration'], label='Avg Blink Duration')
         plt.axhline(y=0.4, color='r', linestyle='--', label='Blink Duration Threshold')
@@ -280,7 +366,7 @@ def analyze_logs(filename='drowsiness_log.csv'):
         plt.legend()
         plt.show()
 
-        '''Highlight Drowsiness Events'''
+        # Highlight Drowsiness Events
         drowsy_events = df[df['Drowsy'] == True]
         plt.figure(figsize=(10, 5))
         plt.plot(df.index, df['Blink Rate (blinks/min)'], label='Blink Rate')

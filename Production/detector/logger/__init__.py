@@ -1,0 +1,1 @@
+from .logController import initialize_logging, log_data

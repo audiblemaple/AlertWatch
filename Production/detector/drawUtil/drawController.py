@@ -1,5 +1,7 @@
 import cv2
+import datetime
 import numpy as np
+
 
 def draw_bounding_box(frame, score, p1, p2, color=(0, 255, 0), size=2):
     cv2.rectangle(frame, p1, p2, (0, 255, 0), 2)
@@ -44,13 +46,33 @@ def draw_head_pose(frame, rotation_vector, translation_vector, camera_matrix):
     return frame
 
 
-def display_fps(frame, fps):
-    """
-    Displays the frames per second (FPS) on the frame.
-    """
-    cv2.putText(frame, f"FPS: {int(fps)}", (10, 30),
-                cv2.FONT_HERSHEY_SIMPLEX, 1, (100, 250, 100), 2, cv2.LINE_AA)
+# def display_fps(frame, fps):
+#     """
+#     Displays the frames per second (FPS) on the frame.
+#     """
+#     timestamp = datetime.datetime.now()
+#     # Schedule the delayed_save_video coroutine
+#     cv2.putText(frame, f"FPS: {int(fps)}", (10, 30),
+#                 cv2.FONT_HERSHEY_SIMPLEX, 1, (100, 250, 100), 2, cv2.LINE_AA)
+#     cv2.putText(frame, f"timestamp: {timestamp.strftime('%Y-%m-%d_%H-%M-%S')}", (10, 400),
+#                 cv2.FONT_HERSHEY_SIMPLEX, 1, (100, 250, 100), 2, cv2.LINE_AA)
 
+def display_fps(frame, fps, avg_fps):
+    """
+    Display current and average FPS on the frame.
+
+    Args:
+        frame (np.ndarray): The video frame to annotate.
+        fps (float): Current FPS.
+        avg_fps (float): Average FPS.
+    """
+    timestamp = datetime.datetime.now()
+    cv2.putText(frame, f"FPS: {fps:.2f}", (10, 30),
+                cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+    cv2.putText(frame, f"Avg FPS: {avg_fps:.2f}", (200, 30),
+                cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 0), 2, cv2.LINE_AA)
+    cv2.putText(frame, f"timestamp: {timestamp.strftime('%Y-%m-%d_%H-%M-%S')}", (10, 400),
+                cv2.FONT_HERSHEY_SIMPLEX, 1, (100, 250, 100), 2, cv2.LINE_AA)
 
 
 def display_blink_info(frame, blink_count, total_blinks, blink_durations) -> None:
