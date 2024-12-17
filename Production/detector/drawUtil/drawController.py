@@ -4,14 +4,14 @@ import numpy as np
 
 
 def draw_bounding_box(frame, score, p1, p2, color=(0, 255, 0), size=2):
-    cv2.rectangle(frame, p1, p2, (0, 255, 0), 2)
+    cv2.rectangle(frame, p1, p2, color, 2)
     cv2.putText(
         frame,
         f"Detection confidence: {score:.2f}%",
         (p1[0], p1[1] - 10),
         cv2.FONT_HERSHEY_SIMPLEX,
         0.5,
-        (0, 255, 0),
+        color,
         1
     )
 
@@ -45,18 +45,6 @@ def draw_head_pose(frame, rotation_vector, translation_vector, camera_matrix):
     frame = cv2.line(frame, nose_tip, tuple(imgpts[2].ravel()), (255, 0, 0), 2)  # Blue axis (Z)
     return frame
 
-
-# def display_fps(frame, fps):
-#     """
-#     Displays the frames per second (FPS) on the frame.
-#     """
-#     timestamp = datetime.datetime.now()
-#     # Schedule the delayed_save_video coroutine
-#     cv2.putText(frame, f"FPS: {int(fps)}", (10, 30),
-#                 cv2.FONT_HERSHEY_SIMPLEX, 1, (100, 250, 100), 2, cv2.LINE_AA)
-#     cv2.putText(frame, f"timestamp: {timestamp.strftime('%Y-%m-%d_%H-%M-%S')}", (10, 400),
-#                 cv2.FONT_HERSHEY_SIMPLEX, 1, (100, 250, 100), 2, cv2.LINE_AA)
-
 def display_fps(frame, fps, avg_fps):
     """
     Display current and average FPS on the frame.
@@ -85,12 +73,12 @@ def display_blink_info(frame, blink_count, total_blinks, blink_durations) -> Non
         total_blinks (int): Total number of blinks detected.
         blink_durations (list): List of blink durations.
     """
-    cv2.putText(frame, f"Blinks: {blink_count}", (10, 90),
+    cv2.putText(frame, f"Blinks: {blink_count}", (10, 300),
                 cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
-    cv2.putText(frame, f"Total Blinks: {total_blinks}", (10, 130),
+    cv2.putText(frame, f"Total Blinks: {total_blinks}", (10, 330),
                 cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2, cv2.LINE_AA)
 
     if blink_durations:
         average_duration = sum(blink_durations) / len(blink_durations)
-        cv2.putText(frame, f"Avg Blink Dur: {average_duration:.2f}s", (10, 170),
+        cv2.putText(frame, f"Avg Blink Dur: {average_duration:.2f}s", (250, 330),
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 255), 2, cv2.LINE_AA)

@@ -8,7 +8,7 @@ from playsound import playsound
 from Production.detector.logger import log_data
 from Production.detector.util import save_video_sync, calculate_EAR
 
-def process_bounding_box(face, frame, face_size):
+def process_bounding_box(face, frame):
     x1, y1, x2, y2, score = face
     # Access frame.shape once
     h, w = frame.shape[:2]
@@ -18,9 +18,8 @@ def process_bounding_box(face, frame, face_size):
     x2 = min(w, int(x2))
     y2 = min(h, int(y2) - 10)
 
-    adjusted_x2 = x2 - face_size
-    adjusted_y2 = y2 - face_size
-    return x1, y1, adjusted_x2, adjusted_y2, x2, y2, score
+
+    return x1, y1, x2, y2, score
 
 
 def run_landmark_inference(hailo_inference, preprocessed_face, face_land_output_name, class_num):
