@@ -10,7 +10,7 @@ from collections import deque
 from appState   import AppState
 from inference  import initialize_inference_models
 from logger     import initialize_logging
-from util       import init_cv_cap, estimate_fps, handle_blink_detection, handle_drowsiness_detection, process_bounding_box, run_landmark_inference
+from util       import init_cv_cap, handle_blink_detection, handle_drowsiness_detection, process_bounding_box, run_landmark_inference
 from drawUtil   import draw_bounding_box, display_fps, draw_landmarks, display_blink_info
 from prePostProcessing import preprocess_face_detection, postprocess_faces, preprocess_face_landmarks, adjust_landmarks
 
@@ -18,14 +18,14 @@ from prePostProcessing import preprocess_face_detection, postprocess_faces, prep
 CLASS_NUM: int = 136 >> 1
 
 ''' Blink Detection Constants '''
-EAR_THRESHOLD: float = 0.21  # Threshold for blink
+EAR_THRESHOLD: float = 0.23  # Threshold for blink
 CONSEC_FRAMES: int = 2       # Frames below threshold for a blink
 
 ''' Buffer Configuration '''
 BUFFER_DURATION: int = 30  # seconds
 
 ''' Frames to skip when detecting faces '''
-FRAMES_TO_SKIP: int = 3
+FRAMES_TO_SKIP: int = 4
 
 FACES: int | None = None
 
@@ -105,7 +105,7 @@ def get_faces(frame, hailo_inference, face_detection_input_shape) -> list[(int, 
     return postprocess_faces(raw_faces, pad_w, pad_h)
 
 def video_processing_loop(hailo_inference, face_detection_input_shape, face_landmarks_input_shape, face_land_output_name, state: AppState):
-    cap = init_cv_cap(640, 360)
+    cap = init_cv_cap(640, 360, 70)
     if cap is None:
         print("Error: Could not open camera.")
         return
@@ -120,6 +120,16 @@ def video_processing_loop(hailo_inference, face_detection_input_shape, face_land
         if not ret:
             print("Error: Failed to capture image.")
             break
+
+        # Get the dimensions of the frame
+        height, width, _ = frame.shape
+
+        # Desired crop size
+        resize_width = 680
+        resize_height = 360
+
+        # Calculate start indices to take a center crop
+        frame = cv2.resize(frame, (resize_width, resize_height), interpolation=cv2.INTER_AREA)
 
         total_frames += 1
         state.frame_buffer.append(frame.copy())
@@ -186,18 +196,11 @@ def main():
         face_det, face_landmarks
     )
 
-    # Open a temporary capture to estimate FPS
-    cap = init_cv_cap(640, 360)
-    if cap is None:
-        print("Error: Could not initialize video capture for FPS estimation.")
-        return
-
-    estimated_fps = estimate_fps(cap, warmup_frames=120)
+    estimated_fps = 60
     state.fps = estimated_fps
     state.buffer_size = int(estimated_fps * BUFFER_DURATION)
     state.frame_buffer = deque(maxlen=state.buffer_size)
     print(f"Estimated FPS: {state.fps:.2f}. Buffer size set to {state.buffer_size} frames.")
-    cap.release()
 
     # Run video processing in a separate thread
     video_thread = threading.Thread(

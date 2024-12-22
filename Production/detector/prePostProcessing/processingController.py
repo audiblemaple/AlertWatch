@@ -327,9 +327,9 @@ def postprocess_faces(outputs, pad_w, pad_h, score_threshold=0.67, nms_threshold
     # input_size = 640
     ''' [(x,y), (w,h)] '''
     # variances = [0.1, 0.2]     # bad
-    # variances = [0.001, 0.003] # gud
+    variances =   [0.00009,   0.02] # gud
     # variances = [0.000001, 0.003] # great
-    variances = [0.000001, 0.005] # also great
+    # variances = [0.000001, 0.005] # also great
     # steps = [16]  # Medium scale step size
     # min_sizes = [[64, 128]]  # Anchors for the medium scale
 
@@ -377,13 +377,13 @@ def postprocess_faces(outputs, pad_w, pad_h, score_threshold=0.67, nms_threshold
     boxes[:, 3] -= pad_h
 
     ''' move left side right + '''
-    boxes[:, 0] -= 5
+    boxes[:, 0] += 10
 
     ''' move top-left side down + '''
     # boxes[:, 1] += 20
 
     ''' move right side right + '''
-    boxes[:, 2] -= 5
+    boxes[:, 2] += 5
 
     ''' move bottom-right side down + '''
     # boxes[:, 3] += 10
@@ -420,6 +420,12 @@ def postprocess_faces(outputs, pad_w, pad_h, score_threshold=0.67, nms_threshold
     # Extract the best box and its score
     best_box = boxes[best_idx].astype(int)
     best_score = scores[best_idx]
+
+    if best_box[3] - best_box[1] < 70 or best_box[2] - best_box[0] < 70:
+        best_box[0] = int(best_box[0] - (best_box[0] * 0.065))
+        best_box[1] = int(best_box[1] - (best_box[1] * 0.065))
+        best_box[2] = int(best_box[2] + (best_box[2] * 0.055))
+        best_box[3] = int(best_box[3] + (best_box[3] * 0.10))
 
     result = [(best_box[0], best_box[1], best_box[2], best_box[3], best_score)]
 
