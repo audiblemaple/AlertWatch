@@ -41,7 +41,7 @@ def ensure_directory_exists(directory: str):
 def handle_faces_sync(faces, frame, hailo_inference, face_land_output_name, face_landmarks_input_shape, all_landmarks,
                       state: AppState, tensors):
     for face in faces:
-        x1, y1, adjusted_x2, adjusted_y2, x2, y2, score = process_bounding_box(face, frame, FACE_SIZE)
+        x1, y1, adjusted_x2, adjusted_y2, x2, y2, score = process_bounding_box(face, frame)
         draw_bounding_box(frame, score, (adjusted_x2, adjusted_y2), (x2, y2))
 
         preprocessed_face, adjusted_bbox = preprocess_face_landmarks(

@@ -1,4 +1,6 @@
+import asyncio
 import datetime
+import json
 import threading
 import time
 
@@ -6,7 +8,11 @@ import cv2
 from playsound import playsound
 
 from Production.detector.logger import log_data
+from Production.detector.socketUtil import initialize_websocket
 from Production.detector.util import save_video_sync, calculate_EAR
+
+WS_URL: str = "ws://192.168.0.239:5000"
+RECONNECT_INTERVAL: int = 2
 
 def process_bounding_box(face, frame):
     x1, y1, x2, y2, score = face
@@ -88,18 +94,46 @@ def handle_drowsiness_detection(avg_EAR, state, frame):
                 print(f"Drowsiness Alert: {', '.join(reasons)}")
 
                 # Launch sound playback in a separate thread
-                threading.Thread(target=play_alert_sound, daemon=True).start()
+                # threading.Thread(target=play_alert_sound, daemon=True).start()
                 state.last_alert_time = current_time
                 log_data(state, drowsy, reasons)
 
+                threading.Thread(
+                    target=send_drowsiness_alert,
+                    args=(WS_URL, RECONNECT_INTERVAL),
+                    daemon=True
+                ).start()
 
-def play_alert_sound():
-    try:
-        playsound('alert.wav')
-    except Exception as e:
-        # Print errors conditionally or log them asynchronously to reduce blocking
-        print(f"Error playing sound: {e}")
+# def play_alert_sound():
+#     try:
+#         playsound('alert.wav')
+#     except Exception as e:
+#         # Print errors conditionally or log them asynchronously to reduce blocking
+#         print(f"Error playing sound: {e}")
 
+
+def send_drowsiness_alert(ws_url: str, reconnect_interval: int) -> None:
+    """
+    Opens a WebSocket connection and sends a JSON message for drowsiness.
+    This function is run in a separate thread whenever drowsiness is detected.
+    """
+    async def async_send():
+        ws_client = await initialize_websocket(ws_url, reconnect_interval)
+        if ws_client.websocket is not None:
+            try:
+                message = {
+                    "type": "alert",
+                    "data": "drowsiness detected!",
+                    "event": "drowsiness"
+                }
+                # Convert Python dict to JSON string
+                await ws_client.websocket.send(json.dumps(message))
+            finally:
+                # Close the connection after sending
+                await ws_client.websocket.close()
+
+    # Run the async portion in a blocking fashion within this thread
+    asyncio.run(async_send())
 
 # import datetime
 # import threading

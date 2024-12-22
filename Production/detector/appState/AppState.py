@@ -1,5 +1,4 @@
 import time
-import asyncio
 
 import threading
 from dataclasses import dataclass, field
@@ -16,12 +15,12 @@ class AppState:
     buffer_size: int = 300
     fps: float = 0.0
     blink_durations: list = field(default_factory=list)  # Stores duration of each blink
-    is_blinking: bool = False  # Indicates if a blink is ongoing
+    is_blinking: bool = False         # Indicates if a blink is ongoing
     current_blink_start: float = 0.0  # Timestamp when the current blink started
 
     # Analysis Parameters
-    analysis_window: int = 60  # seconds
-    blink_rate_threshold: float = 70.0  # blinks per minute
+    analysis_window: int = 60              # seconds
+    blink_rate_threshold: float = 70.0     # blinks per minute
     blink_duration_threshold: float = 0.4  # seconds
     prolonged_EAR_duration_threshold: float = 0.8  # seconds
 
@@ -30,13 +29,13 @@ class AppState:
 
     # Debounce Parameters
     last_alert_time: float      = 0.0   # Timestamp of the last alert
-    debounce_time_alert: float  = 2.0   # Minimum seconds between alerts
+    debounce_time_alert: float  = 1.5   # Minimum seconds between alerts
     last_video_time: float      = 0.0   # Timestamp of the last video
     debounce_time_video: float  = 30    # Minimum seconds between video savings
     alert_lock: threading.Lock  = field(default_factory=threading.Lock)
     video_lock: threading.Lock  = field(default_factory=threading.Lock)
 
-    def update_blink_rate(self):
+    def update_blink_rate(self) -> float:
         current_time = time.time()
         # Remove blinks outside the analysis window
         while self.blink_timestamps and current_time - self.blink_timestamps[0] > self.analysis_window:
@@ -44,14 +43,14 @@ class AppState:
         blink_rate = len(self.blink_timestamps) * (60 / self.analysis_window)  # blinks per minute
         return blink_rate
 
-    def check_prolonged_EAR(self, current_EAR, ear_start_time):
+    def check_prolonged_EAR(self, current_EAR, ear_start_time) -> bool :
         if current_EAR < EAR_THRESHOLD:
             elapsed = time.time() - ear_start_time
             if elapsed > self.prolonged_EAR_duration_threshold:
                 return True
         return False
 
-    def is_drowsy(self, current_EAR, ear_start_time):
+    def is_drowsy(self, current_EAR, ear_start_time) -> tuple[bool, list[str]]:
         blink_rate = self.update_blink_rate()
         # long_blinks = self.check_blink_duration()
         prolonged_EAR = self.check_prolonged_EAR(current_EAR, ear_start_time)

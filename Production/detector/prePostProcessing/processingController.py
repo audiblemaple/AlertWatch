@@ -248,7 +248,7 @@ fm_sizes = [(40,40)]
 
 PRECOMPUTED_ANCHORS = generate_anchors(fm_sizes, input_size, steps, min_sizes)
 
-def postprocess_faces(outputs, img_w, img_h, scale, pad_w, pad_h, score_threshold=0.67, nms_threshold=0.4):
+def postprocess_faces(outputs, pad_w, pad_h, score_threshold=0.67, nms_threshold=0.4) -> list[(int, int, int, int, float)] | None :
     """
     Postprocess the model outputs to extract face bounding boxes from the medium scale (40x40).
     """
@@ -272,14 +272,14 @@ def postprocess_faces(outputs, img_w, img_h, scale, pad_w, pad_h, score_threshol
 
         return np.stack([x_min, y_min, x_max, y_max], axis=1)
 
-    def nms(boxes, scores, nms_threshold):
-        indices = cv2.dnn.NMSBoxes(
-            bboxes=boxes.tolist(),
-            scores=scores.tolist(),
-            score_threshold=score_threshold,
-            nms_threshold=nms_threshold
-        )
-        return indices.flatten() if len(indices) > 0 else []
+    # def nms(boxes, scores, nms_threshold):
+    #     indices = cv2.dnn.NMSBoxes(
+    #         bboxes=boxes.tolist(),
+    #         scores=scores.tolist(),
+    #         score_threshold=score_threshold,
+    #         nms_threshold=nms_threshold
+    #     )
+    #     return indices.flatten() if len(indices) > 0 else []
 
     # ^^^^ alternative implementation of the function above ^^^^^^
     # def nms(boxes, scores, nms_threshold):
@@ -319,7 +319,7 @@ def postprocess_faces(outputs, img_w, img_h, scale, pad_w, pad_h, score_threshol
     #     return iou
 
 
-    def sigmoid(x):
+    def sigmoid(x) -> float :
         """Replace scipy.special.expit with NumPy implementation."""
         return 1 / (1 + np.exp(-x))
 
@@ -328,7 +328,8 @@ def postprocess_faces(outputs, img_w, img_h, scale, pad_w, pad_h, score_threshol
     ''' [(x,y), (w,h)] '''
     # variances = [0.1, 0.2]     # bad
     # variances = [0.001, 0.003] # gud
-    variances = [0.000001, 0.003]
+    # variances = [0.000001, 0.003] # great
+    variances = [0.000001, 0.005] # also great
     # steps = [16]  # Medium scale step size
     # min_sizes = [[64, 128]]  # Anchors for the medium scale
 
@@ -376,35 +377,53 @@ def postprocess_faces(outputs, img_w, img_h, scale, pad_w, pad_h, score_threshol
     boxes[:, 3] -= pad_h
 
     ''' move left side right + '''
-    boxes[:, 0] += 3
+    boxes[:, 0] -= 5
 
     ''' move top-left side down + '''
-    boxes[:, 1] += 20
+    # boxes[:, 1] += 20
 
     ''' move right side right + '''
-    boxes[:, 2] -= 15
+    boxes[:, 2] -= 5
 
     ''' move bottom-right side down + '''
-    boxes[:, 3] += 10
+    # boxes[:, 3] += 10
 
     # Apply NMS
-    boxes_xywh = boxes.copy()
-    boxes_xywh[:, 2] -= boxes_xywh[:, 0]  # width
-    boxes_xywh[:, 3] -= boxes_xywh[:, 1]  # height
-    indices = nms(boxes_xywh, scores, nms_threshold)
-    boxes = boxes[indices]
-    scores = scores[indices]
+    # boxes_xywh = boxes.copy()
+    # boxes_xywh[:, 2] -= boxes_xywh[:, 0]  # width
+    # boxes_xywh[:, 3] -= boxes_xywh[:, 1]  # height
+    # indices = nms(boxes_xywh, scores, nms_threshold)
+    # boxes = boxes[indices]
+    # scores = scores[indices]
+    #
+    # boxes = boxes.astype(int)
+    #
+    #
+    #
+    # results = []
+    # for box, score in zip(boxes, scores):
+    #     x1, y1, x2, y2 = box
+    #     results.append((x1, y1, x2, y2, score))
+    #
+    # return results
 
-    boxes = boxes.astype(int)
 
-    results = []
-    for box, score in zip(boxes, scores):
-        x1, y1, x2, y2 = box
-        results.append((x1, y1, x2, y2, score))
+    if len(scores) < 1:
+        return None
 
-    return results
+    # Convert scores to a NumPy array if they aren't already
+    scores = np.array(scores)
 
+    # Find the index of the highest score
+    best_idx = np.argmax(scores)
 
+    # Extract the best box and its score
+    best_box = boxes[best_idx].astype(int)
+    best_score = scores[best_idx]
+
+    result = [(best_box[0], best_box[1], best_box[2], best_box[3], best_score)]
+
+    return result
 
 
 # working
