@@ -1,8 +1,10 @@
-const WebSocket = require("ws");
-const {startSpeedBroadcast} = require("./util/carManager");
+const path = require("path");
 const {maxSpeed} = process.env;
+const WebSocket = require("ws");
+const {playSound, transcribeWithWhisper} = require("./util/sound");
 const {printToConsole} = require("./util/util");  // Import the file system module
-const {currentDriveObject, updateDriveDataLog} = require("../../util/driveLogManager");
+const {startSpeedBroadcast} = require("./util/carManager");
+const {currentDriveObject, updateDriveDataLog} = require("./util/driveLogManager");
 
 let detectionUnitData = undefined;
 
@@ -65,7 +67,7 @@ function broadcast(wss, data) {
 }
 
 // Function to handle messages from clients
-function handleClientMessage(ws, message, wss) {
+async function handleClientMessage(ws, message, wss) {
     try {
         const data = JSON.parse(message);
         const response = {
@@ -113,14 +115,42 @@ function handleClientMessage(ws, message, wss) {
 
             case "alert":
                 const {event} = data
-                // TODO: here I should sound the message...
 
-                // Example usage
-                muteAllStreams();         // Mute all other streams
-                playSound('/path/to/your_sound_file.wav');  // Play custom sound
-                setTimeout(unmuteAllStreams, 3000); // Unmute after 3 seconds
+//                if (currentDriveObject.high_alert_num > 0){
+//                    const assetDir = path.join(__dirname, "assets/sounds");
+//                    const filePath = path.join(assetDir, "break2.wav");
+//                    playSound(filePath);
+//                    break;
+//                }
+//                else if (currentDriveObject.medium_alert_num > 0) {
+                if (currentDriveObject.medium_alert_num > 0) {
+                    let wavFilePath = path.join(__dirname, 'assets/sounds', 'attentionTest.wav');
+                    playSound(wavFilePath);
 
-                printToConsole(event);
+                    wavFilePath = path.join(__dirname, 'assets/sounds', 'attentionTest.wav');
+                    try {
+                        const wavFilePath = path.join(__dirname, "assets/sounds", "attentionTest.wav");
+
+                        // 1) Get raw output from whisper-cli
+                        const rawOutput = await transcribeWithWhisper(wavFilePath);
+                        console.log("Raw output:\n", rawOutput);
+
+                        // 2) Optionally parse out timestamps
+                        const linesWithoutTimestamps = parseWhisperOutput(rawOutput);
+                        console.log("\nTranscription lines (no timestamps):\n", linesWithoutTimestamps);
+                    } catch (err) {
+                        console.error("Error:", err.message);
+                    }
+
+                    currentDriveObject.high_alert_num += 1;
+                    break;
+                } else {
+                    const assetDir = path.join(__dirname, "assets/sounds");
+                    const filePath = path.join(assetDir, "break2.wav");
+                    playSound(filePath);
+                    currentDriveObject.medium_alert_num += 1;
+                }
+
                 break;
 
             default:
