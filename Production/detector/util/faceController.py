@@ -11,7 +11,8 @@ from Production.detector.logger import log_data
 from Production.detector.socketUtil import initialize_websocket
 from Production.detector.util import save_video_sync, calculate_EAR
 
-WS_URL: str = "ws://192.168.0.239:5000"
+# WS_URL: str = "ws://192.168.0.239:5000"
+WS_URL: str = "ws://192.168.0.63:5000"
 RECONNECT_INTERVAL: int = 2
 
 def process_bounding_box(face, frame):

@@ -49,7 +49,8 @@ function updateSpeed(speed) {
     document.getElementById('speedValue').textContent = speed;
 }
 
-const socket = new WebSocket("ws://192.168.0.233:5000");
+//const socket = new WebSocket("ws://192.168.0.233:5000");
+const socket = new WebSocket("ws://192.168.0.63:5000");
 
 socket.onopen = () => {
     console.log("Connected to WebSocket server.");

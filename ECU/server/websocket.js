@@ -2,6 +2,7 @@ const WebSocket = require("ws");
 const {startSpeedBroadcast} = require("./util/carManager");
 const {maxSpeed} = process.env;
 const {printToConsole} = require("./util/util");  // Import the file system module
+const {currentDriveObject, updateDriveDataLog} = require("../../util/driveLogManager");
 
 let detectionUnitData = undefined;
 
@@ -70,6 +71,7 @@ function handleClientMessage(ws, message, wss) {
         const response = {
             type: null,
             data: data,
+            event: null
         };
 
         const {type, msgData} = data;
@@ -95,7 +97,6 @@ function handleClientMessage(ws, message, wss) {
                         ...(typeof face_landmark_tensors !== 'undefined' && { face_landmark_tensors }),
                     }
                 });
-
                 break;
 
             case "accelerate":
@@ -110,7 +111,20 @@ function handleClientMessage(ws, message, wss) {
                 printToConsole(msgData);
                 break;
 
+            case "alert":
+                const {event} = data
+                // TODO: here I should sound the message...
+
+                // Example usage
+                muteAllStreams();         // Mute all other streams
+                playSound('/path/to/your_sound_file.wav');  // Play custom sound
+                setTimeout(unmuteAllStreams, 3000); // Unmute after 3 seconds
+
+                printToConsole(event);
+                break;
+
             default:
+                printToConsole(`unknown type: ${data}`)
                 response.type = "unknown";
 
         }

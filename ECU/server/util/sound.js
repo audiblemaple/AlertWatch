@@ -36,8 +36,3 @@ function playSound(filePath) {
     }
   });
 }
-
-// Example usage
-muteAllStreams();         // Mute all other streams
-playSound('/path/to/your_sound_file.wav');  // Play custom sound
-setTimeout(unmuteAllStreams, 3000); // Unmute after 3 seconds
