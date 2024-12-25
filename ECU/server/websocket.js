@@ -6,7 +6,6 @@ const {printToConsole, removeFile} = require("./util/util");  // Import the file
 const {startSpeedBroadcast} = require("./util/carManager");
 const {currentDriveObject, updateDriveDataLog} = require("./util/driveLogManager");
 
-
 let detectionUnitData = undefined;
 
 // Function to initialize the WebSocket server
@@ -118,7 +117,7 @@ async function handleClientMessage(ws, message, wss) {
             case "alert":
                 const {event} = data
 
-                let takeABreak = path.join(assetDir, "takeABreak.wav");
+                let takeABreak =    path.join(__dirname, 'assets/sounds', "takeABreak.wav");
                 let attentionTest = path.join(__dirname, 'assets/sounds', 'attentionTest.wav');
                 let failedToParse = path.join(__dirname, 'assets/sounds', 'failedToParse.wav');
                 let noResponse =    path.join(__dirname, 'assets/sounds', 'noResponse.wav');
@@ -139,8 +138,6 @@ async function handleClientMessage(ws, message, wss) {
                         // check user response
                         const isConfirmedAlert = hasAlertConfirmation(linesWithoutTimestamps);
 
-                        removeFile(userAudioPath);
-
                         if (isConfirmedAlert) {
                             printToConsole("User has confirmed being alert.");
                             await playSound(attentionTest);
@@ -159,11 +156,9 @@ async function handleClientMessage(ws, message, wss) {
                     currentDriveObject.high_alert_num += 1;
                     break;
                 } else {
-                    const assetDir = path.join(__dirname, "assets/sounds");
                     playSound(takeABreak);
                     currentDriveObject.medium_alert_num += 1;
                 }
-
                 break;
 
             default:
