@@ -1,10 +1,11 @@
 const path = require("path");
 const {maxSpeed} = process.env;
 const WebSocket = require("ws");
-const {playSound, transcribeWithWhisper} = require("./util/sound");
-const {printToConsole} = require("./util/util");  // Import the file system module
+const {playSound, transcribeWithWhisper, parseWhisperOutput, recordAudioWithFFmpeg, hasAlertConfirmation} = require("./util/sound");
+const {printToConsole, removeFile} = require("./util/util");  // Import the file system module
 const {startSpeedBroadcast} = require("./util/carManager");
 const {currentDriveObject, updateDriveDataLog} = require("./util/driveLogManager");
+
 
 let detectionUnitData = undefined;
 
@@ -14,7 +15,7 @@ function initWebSocket(server) {
 
     // Event listener for new connections
     wss.on("connection", (ws) => {
-        console.log("New WebSocket client connected");
+//        console.log("New WebSocket client connected");
 
         // Send a welcome message to the new client
         sendWelcomeMessage(ws);
@@ -26,7 +27,8 @@ function initWebSocket(server) {
 
         // Handle client disconnection
         ws.on("close", () => {
-            console.log("WebSocket client disconnected");
+//            console.log("WebSocket client disconnected");
+
         });
     });
 
@@ -116,28 +118,40 @@ async function handleClientMessage(ws, message, wss) {
             case "alert":
                 const {event} = data
 
-//                if (currentDriveObject.high_alert_num > 0){
-//                    const assetDir = path.join(__dirname, "assets/sounds");
-//                    const filePath = path.join(assetDir, "break2.wav");
-//                    playSound(filePath);
-//                    break;
-//                }
-//                else if (currentDriveObject.medium_alert_num > 0) {
+                let takeABreak = path.join(assetDir, "takeABreak.wav");
+                let attentionTest = path.join(__dirname, 'assets/sounds', 'attentionTest.wav');
+                let failedToParse = path.join(__dirname, 'assets/sounds', 'failedToParse.wav');
+                let noResponse =    path.join(__dirname, 'assets/sounds', 'noResponse.wav');
+
                 if (currentDriveObject.medium_alert_num > 0) {
-                    let wavFilePath = path.join(__dirname, 'assets/sounds', 'attentionTest.wav');
-                    playSound(wavFilePath);
+                    await playSound(attentionTest);
 
-                    wavFilePath = path.join(__dirname, 'assets/sounds', 'attentionTest.wav');
+                    const userAudioPath = path.join(__dirname, "assets/sounds", "userCollected.wav");
                     try {
-                        const wavFilePath = path.join(__dirname, "assets/sounds", "attentionTest.wav");
 
-                        // 1) Get raw output from whisper-cli
-                        const rawOutput = await transcribeWithWhisper(wavFilePath);
-                        console.log("Raw output:\n", rawOutput);
+                        // Record audio using ffmpeg
+                        await recordAudioWithFFmpeg(userAudioPath, 2);
 
-                        // 2) Optionally parse out timestamps
+                        // Get output from whisper-cli
+                        const rawOutput = await transcribeWithWhisper(userAudioPath);
+                        // Parse timestamps
                         const linesWithoutTimestamps = parseWhisperOutput(rawOutput);
-                        console.log("\nTranscription lines (no timestamps):\n", linesWithoutTimestamps);
+                        // check user response
+                        const isConfirmedAlert = hasAlertConfirmation(linesWithoutTimestamps);
+
+                        removeFile(userAudioPath);
+
+                        if (isConfirmedAlert) {
+                            printToConsole("User has confirmed being alert.");
+                            await playSound(attentionTest);
+                            // Proceed with alert logic
+                        } else {
+                            printToConsole("User did not confirm being alert.");
+                            await playSound(failedToParse);
+                            // Handle lack of confirmation (e.g., prompt again, log the event, etc.)
+                        }
+
+                        printToConsole(linesWithoutTimestamps)
                     } catch (err) {
                         console.error("Error:", err.message);
                     }
@@ -146,8 +160,7 @@ async function handleClientMessage(ws, message, wss) {
                     break;
                 } else {
                     const assetDir = path.join(__dirname, "assets/sounds");
-                    const filePath = path.join(assetDir, "break2.wav");
-                    playSound(filePath);
+                    playSound(takeABreak);
                     currentDriveObject.medium_alert_num += 1;
                 }
 

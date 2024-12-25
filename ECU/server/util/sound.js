@@ -1,5 +1,12 @@
 const { exec, execFile } = require('child_process');
 const path = require("path");
+const { spawn } = require('child_process');
+
+const ffmpeg = require('fluent-ffmpeg');
+const natural = require('natural');
+const stemmer = natural.PorterStemmer; // Using Porter Stemmer
+const tokenizer = new natural.WordTokenizer();
+
 
 // Function to mute all streams
 function muteAllStreams() {
@@ -29,19 +36,75 @@ function unmuteAllStreams() {
     });
 }
 
-// Function to play custom sound
+/**
+ * Plays a sound file.
+ * @param {string} filePath - Path to the WAV file to play.
+ * @returns {Promise<void>} - Resolves when the sound has finished playing.
+ */
 function playSound(filePath) {
-    muteAllStreams();
-    exec(`paplay ${filePath}`, (err) => {
-        if (err) {
-          console.error(`Error playing sound: ${err}`);
-        }
+    return new Promise((resolve, reject) => {
+        muteAllStreams();
+        const player = spawn('aplay', [filePath]);
+
+        player.on('error', (err) => {
+            console.error(`Error playing sound: ${err.message}`);
+            reject(err);
+        });
+
+        player.on('close', (code) => {
+            if (code !== 0) {
+                reject(new Error(`Sound player exited with code ${code}`));
+            } else {
+                resolve();
+            }
+        });
+        setTimeout(unmuteAllStreams, 4000);
     });
-    setTimeout(unmuteAllStreams, 4000);
 }
 
 
 
+const confirmationPhrases = [
+    'im alert',
+    'i am alert',
+    'alert',
+    'i am being alert',
+    'i\'m alert',
+    'i am fully alert',
+    'alertness confirmed'
+    // Add more variations as needed
+];
+
+// Preprocess confirmation phrases with stemming
+const stemmedConfirmationPhrases = confirmationPhrases.map(phrase => {
+    return phrase.split(' ').map(word => stemmer.stem(word)).join(' ');
+});
+
+/**
+ * Checks if the transcription includes a confirmation of alertness.
+ * @param {Array<string>} lines - Parsed transcription lines.
+ * @returns {boolean} - True if confirmation is detected, else false.
+ */
+function hasAlertConfirmation(lines) {
+    for (const line of lines) {
+        // Tokenize the line into words
+        const words = tokenizer.tokenize(line.toLowerCase());
+
+        // Stem each word
+        const stemmedWords = words.map(word => stemmer.stem(word));
+
+        // Reconstruct the line from stemmed words
+        const stemmedLine = stemmedWords.join(' ');
+
+        // Check against each stemmed confirmation phrase
+        for (const phrase of stemmedConfirmationPhrases) {
+            if (stemmedLine.includes(phrase)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
 
 /**
  * Transcribes a WAV file using whisper-cli, capturing stdout/stderr streams.
@@ -50,9 +113,9 @@ function playSound(filePath) {
  */
 async function transcribeWithWhisper(audioFilePath) {
   // Path to the whisper-cli binary
-  const whisperCliPath = path.join(__dirname, "../bin", "whisper-cli");
+  const whisperCliPath = path.join(__dirname, "../assets/bin", "whisper-cli");
   // Path to the whisper model
-  const modelPath = path.join(__dirname, "../models", "ggml-tiny.en.bin");
+  const modelPath = path.join(__dirname, "../assets/models", "ggml-tiny.en.bin");
 
   // Build arguments
   const args = ["--model", modelPath, "--no-prints", audioFilePath];
@@ -91,6 +154,9 @@ async function transcribeWithWhisper(audioFilePath) {
   });
 }
 
+
+
+
 // A helper function to parse the raw transcription lines
 function parseWhisperOutput(rawOutput) {
   // Each line might look like:
@@ -103,7 +169,40 @@ function parseWhisperOutput(rawOutput) {
   );
 }
 
+/**
+ * Records audio using ffmpeg and saves it as a WAV file in 16kHz mono format.
+ * @param {string} outputFilePath - Path to save the recorded WAV file.
+ * @param {number} durationInSeconds - Duration to record in seconds.
+ * @returns {Promise<void>}
+ */
+function recordAudioWithFFmpeg(outputFilePath, durationInSeconds = 5) {
+    return new Promise((resolve, reject) => {
+
+        ffmpeg()
+            .input('default') // Adjust based on OS. 'default' works for Linux with ALSA.
+            .inputFormat('alsa') // 'alsa' for Linux. Use 'avfoundation' for macOS, 'dshow' for Windows.
+            .audioFrequency(16000)
+            .audioChannels(1)
+            .audioCodec('pcm_s16le')
+            .format('wav')
+            .duration(durationInSeconds)
+            .on('end', () => {
+                resolve();
+            })
+            .on('error', (err) => {
+                reject(err);
+            })
+            .save(outputFilePath);
+    });
+}
+
+
+
 module.exports = {
-  playSound,
-  transcribeWithWhisper
+    playSound,
+    transcribeWithWhisper,
+    parseWhisperOutput,
+//  recordAudio
+    recordAudioWithFFmpeg,
+    hasAlertConfirmation
 };

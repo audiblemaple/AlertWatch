@@ -4,7 +4,7 @@ import threading
 from dataclasses import dataclass, field
 from collections import deque
 
-EAR_THRESHOLD = 0.21
+EAR_THRESHOLD = 0.24
 
 @dataclass
 class AppState:
@@ -20,7 +20,7 @@ class AppState:
 
     # Analysis Parameters
     analysis_window: int = 60              # seconds
-    blink_rate_threshold: float = 70.0     # blinks per minute
+    blink_rate_threshold: float = 75.0     # blinks per minute
     prolonged_EAR_duration_threshold: float = 1  # seconds
 
     # Timestamps of blinks for rate calculation
@@ -28,7 +28,7 @@ class AppState:
 
     # Debounce Parameters
     last_alert_time: float      = 0.0   # Timestamp of the last alert
-    debounce_time_alert: float  = 2   # Minimum seconds between alerts
+    debounce_time_alert: float  = 4   # Minimum seconds between alerts
     last_video_time: float      = 0.0   # Timestamp of the last video
     debounce_time_video: float  = 30    # Minimum seconds between video savings
     alert_lock: threading.Lock  = field(default_factory=threading.Lock)

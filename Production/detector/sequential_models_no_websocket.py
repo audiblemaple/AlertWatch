@@ -18,14 +18,14 @@ from prePostProcessing import preprocess_face_detection, postprocess_faces, prep
 CLASS_NUM: int = 136 >> 1
 
 ''' Blink Detection Constants '''
-EAR_THRESHOLD: float = 0.21  # Threshold for blink
-CONSEC_FRAMES: int = 3       # Frames below threshold for a blink
+EAR_THRESHOLD: float = 0.24  # Threshold for blink
+CONSEC_FRAMES: int = 2       # Frames below threshold for a blink
 
 ''' Buffer Configuration '''
 BUFFER_DURATION: int = 30  # seconds
 
 ''' Frames to skip when detecting faces '''
-FRAMES_TO_SKIP: int = 5
+FRAMES_TO_SKIP: int = 4
 
 FACES: int | None = None
 
@@ -121,15 +121,15 @@ def video_processing_loop(hailo_inference, face_detection_input_shape, face_land
             print("Error: Failed to capture image.")
             break
 
-        # Get the dimensions of the frame
-        height, width, _ = frame.shape
-
-        # Desired crop size
-        resize_width = 680
-        resize_height = 360
-
-        # Calculate start indices to take a center crop
-        frame = cv2.resize(frame, (resize_width, resize_height), interpolation=cv2.INTER_AREA)
+        # # Get the dimensions of the frame
+        # height, width, _ = frame.shape
+        #
+        # # Desired crop size
+        # resize_width = 680
+        # resize_height = 360
+        #
+        # # Calculate start indices to take a center crop
+        # frame = cv2.resize(frame, (resize_width, resize_height), interpolation=cv2.INTER_AREA)
 
         total_frames += 1
         state.frame_buffer.append(frame.copy())
@@ -149,6 +149,7 @@ def video_processing_loop(hailo_inference, face_detection_input_shape, face_land
             face = get_faces(frame, hailo_inference, face_detection_input_shape)
             if face is None:
                 face = face_buff
+                face_buff = None
             else:
                 face_buff = face
         else:
