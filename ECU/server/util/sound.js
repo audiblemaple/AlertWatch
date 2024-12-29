@@ -4,6 +4,8 @@ const { spawn } = require('child_process');
 
 const ffmpeg = require('fluent-ffmpeg');
 const natural = require('natural');
+const {user_status, confirmationPhrases, noResponsePhrases} = require("./const");
+const {printToConsole} = require("./util");
 const stemmer = natural.PorterStemmer; // Using Porter Stemmer
 const tokenizer = new natural.WordTokenizer();
 
@@ -62,21 +64,13 @@ function playSound(filePath) {
     });
 }
 
-
-
-const confirmationPhrases = [
-    'im alert',
-    'i am alert',
-    'alert',
-    'i am being alert',
-    'i\'m alert',
-    'i am fully alert',
-    'alertness confirmed'
-    // Add more variations as needed
-];
-
 // Preprocess confirmation phrases with stemming
 const stemmedConfirmationPhrases = confirmationPhrases.map(phrase => {
+    return phrase.split(' ').map(word => stemmer.stem(word)).join(' ');
+});
+
+// Preprocess confirmation phrases with stemming
+const stemmedNoResponsePhrases = noResponsePhrases.map(phrase => {
     return phrase.split(' ').map(word => stemmer.stem(word)).join(' ');
 });
 
@@ -96,14 +90,22 @@ function hasAlertConfirmation(lines) {
         // Reconstruct the line from stemmed words
         const stemmedLine = stemmedWords.join(' ');
 
+        // Check against each stemmed no response phrase
+        for (const phrase of stemmedNoResponsePhrases) {
+            if (stemmedLine.includes(phrase))
+                return user_status.noResponse;
+        }
+
         // Check against each stemmed confirmation phrase
         for (const phrase of stemmedConfirmationPhrases) {
-            if (stemmedLine.includes(phrase)) {
-                return true;
-            }
+            if (stemmedLine.includes(phrase))
+                return user_status.userResponded;
         }
     }
-    return false;
+
+    if (lines.length === 0)
+        return user_status.noResponse;
+    return user_status.failedToParse;
 }
 
 /**
@@ -155,13 +157,10 @@ async function transcribeWithWhisper(audioFilePath) {
 }
 
 
-
-
 // A helper function to parse the raw transcription lines
 function parseWhisperOutput(rawOutput) {
-  // Each line might look like:
-  // [00:00:00.000 --> 00:00:04.000]   alertness check...
-  // We'll remove that bracketed part using a regex and just keep the text portion.
+
+  // Remove bracketed part using a regex and keep text portion
   const lines = rawOutput.split("\n").filter(Boolean);
 
   return lines.map((line) =>
@@ -179,8 +178,8 @@ function recordAudioWithFFmpeg(outputFilePath, durationInSeconds = 5) {
     return new Promise((resolve, reject) => {
 
         ffmpeg()
-            .input('default') // Adjust based on OS. 'default' works for Linux with ALSA.
-            .inputFormat('alsa') // 'alsa' for Linux. Use 'avfoundation' for macOS, 'dshow' for Windows.
+            .input('default')
+            .inputFormat('alsa')
             .audioFrequency(16000)
             .audioChannels(1)
             .audioCodec('pcm_s16le')
@@ -197,12 +196,22 @@ function recordAudioWithFFmpeg(outputFilePath, durationInSeconds = 5) {
 }
 
 
+async function askForUserConfirmation() {
+    const userAudioPath = path.join(__dirname, "../assets/sounds", "userCollected.wav");
+    // Record audio using ffmpeg
+    await recordAudioWithFFmpeg(userAudioPath, 4);
+    // Get output from whisper-cli
+    const rawOutput = await transcribeWithWhisper(userAudioPath);
+    // Parse timestamps
+    const linesWithoutTimestamps = parseWhisperOutput(rawOutput);
+    printToConsole(linesWithoutTimestamps)
+
+    // check user response
+    return  hasAlertConfirmation(linesWithoutTimestamps);
+}
+
 
 module.exports = {
     playSound,
-    transcribeWithWhisper,
-    parseWhisperOutput,
-//  recordAudio
-    recordAudioWithFFmpeg,
-    hasAlertConfirmation
+    askForUserConfirmation
 };

@@ -66,7 +66,7 @@ function decelerateCar(){
     decelerating = true;
     stopped      = false;
     cruise       = false;
-    speed += Math.floor(-9 * ((7 + getRandomInt(5)) / 10));
+    speed += Math.floor(-9 * ((7 + getRandomInt(3)) / 10));
 }
 
 function cruiseDrive(){
@@ -75,7 +75,7 @@ function cruiseDrive(){
     stopped      = false;
     cruise       = true;
 
-    getRandomInt(101) >= 50 ? speed += getRandomInt(5) :  speed -= getRandomInt(5);
+    getRandomInt(101) >= 50 ? speed += getRandomInt(5) :  speed -= getRandomInt(3);
 }
 
 module.exports = { startSpeedBroadcast, maxSpeed };

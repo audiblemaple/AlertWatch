@@ -38,6 +38,7 @@ const createDriveLogFile = () => {
     mild_alert_num: 0,
     medium_alert_num: 0,
     high_alert_num: 0,
+    consecutive_alert_num: 0,
   };
 
   currentDriveObject = initialData;
