@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Speed Gauge and Video Feed</title>
+    <link rel="icon" type="image/x-icon" href="images/favicon.ico">
     <link rel="stylesheet" href="style.css"/>
     <script src="extLibs/http_cdn.jsdelivr.net_npm_canvas-gauges@2.1.7_gauge.min.js"></script>
     <script src="script.js" defer> </script>
@@ -14,6 +15,12 @@
         ECU Dashboard
     </h1>
     <div id="dashboard">
+
+        <div id="Detection-unit-container" class="section">
+            <h2 class="header" >Detection unit data</h2>
+            <p id="detection-unit-data" ></p>
+        </div>
+
         <!-- Speed Gauge Section -->
         <div id="gauge-container" class="section">
             <h2 class="header" >car speed</h2>
@@ -23,14 +30,15 @@
             <p>Speed: <span id="speedValue">0</span> km/h</p>
         </div>
 
-        <!-- something Placeholder Section -->
-        <div id="Detection-unit-container" class="section">
+        <div id="Car-controls-container" class="section">
             <h2 class="header" >Detection unit data</h2>
-            <p id="detection-unit-data" ></p>
+            <button id="car-control-accelerate" >accelerate</button>
+            <button id="car-control-deccelerate" >deccelerate</button>
+            <button id="car-control-cruise" >cruise</button>
+
         </div>
 
-        <!-- something Placeholder Section -->
-        <div id="TODO-container" class="section">
+        <div id="Detection-feed-container" class="section">
             <h2 class="header" >Detection feed data</h2>
             <p id="fpsDisplay">NAN</p>
             <p id="fpsDisplayAVG">NAN</p>

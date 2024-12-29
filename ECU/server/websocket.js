@@ -2,7 +2,7 @@ const path = require("path");
 const {maxSpeed} = process.env;
 const WebSocket = require("ws");
 const {playSound, askForUserConfirmation} = require("./util/sound");
-const {printToConsole} = require("./util/util");
+const {printToConsole, getSystemData} = require("./util/util");
 const {startSpeedBroadcast, decelerateCar} = require("./util/carManager");
 const {currentDriveObject, updateDriveDataLog} = require("./util/driveLogManager");
 
@@ -41,6 +41,8 @@ function sendWelcomeMessage(ws) {
     for (let i = 0; i <= maxSpeed; i += 20)
         tickList.push(i);
 
+    const systemData = getSystemData();
+
     const welcomeMessage = {
         type: "welcome",
         gaugeConf: {
@@ -50,8 +52,10 @@ function sendWelcomeMessage(ws) {
                 maxVal: 220
             },
         },
-        detectionUnitData: detectionUnitData
+        detectionUnitData: detectionUnitData,
+        systemData: systemData
     };
+
     ws.send(JSON.stringify(welcomeMessage));
 }
 
