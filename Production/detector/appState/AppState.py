@@ -4,7 +4,7 @@ import threading
 from dataclasses import dataclass, field
 from collections import deque
 
-EAR_THRESHOLD = 0.24
+EAR_THRESHOLD = 0.17
 
 @dataclass
 class AppState:

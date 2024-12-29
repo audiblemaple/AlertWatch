@@ -18,14 +18,14 @@ from prePostProcessing import preprocess_face_detection, postprocess_faces, prep
 CLASS_NUM: int = 136 >> 1
 
 ''' Blink Detection Constants '''
-EAR_THRESHOLD: float = 0.24  # Threshold for blink
+EAR_THRESHOLD: float = 0.17  # Threshold for blink
 CONSEC_FRAMES: int = 2       # Frames below threshold for a blink
 
 ''' Buffer Configuration '''
 BUFFER_DURATION: int = 30  # seconds
 
 ''' Frames to skip when detecting faces '''
-FRAMES_TO_SKIP: int = 4
+FRAMES_TO_SKIP: int = 1
 
 FACES: int | None = None
 

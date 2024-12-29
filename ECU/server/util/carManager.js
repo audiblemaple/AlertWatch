@@ -2,30 +2,26 @@ require("dotenv").config();
 const {maxSpeed, updateFreq} = process.env;
 const WebSocket = require("ws");
 const {units} = require("./const");
+const {carState} = require("./global");
 const {getRandomInt} = require("./random");
 
 let speed = 0;
 
-let accelerating = true;
-let decelerating = false;
-let stopped      = false;
-let cruise       = false;
-
 // Function to generate a random speed update
 function updateSpeed() {
-    if (accelerating)
+    if (carState.accelerating)
         accelerateCar();
-    if (decelerating || speed >= 135)
+    if (carState.decelerating || speed >= 135)
         decelerateCar();
-    if (cruise       || speed >= 120)
+    if (carState.cruise       || speed >= 120)
         cruiseDrive();
 }
 
 function logStatus(){
-    console.log("accelerating: ", accelerating)
-    console.log("decelerating: ", decelerating)
-    console.log("stopped: "     , stopped)
-    console.log("cruise: "        , cruise)
+    console.log("accelerating: ", carState.accelerating)
+    console.log("decelerating: ", carState.decelerating)
+    console.log("stopped: "     , carState.stopped)
+    console.log("cruise: "        , carState.cruise)
     console.log("speed: ", speed)
     console.log("\n")
 }
@@ -54,28 +50,28 @@ function broadcastSpeed(wss, speed) {
 }
 
 function accelerateCar(){
-    accelerating = true;
-    decelerating = false;
-    stopped      = false;
-    cruise       = false;
+    carState.accelerating = true;
+    carState.decelerating = false;
+    carState.stopped      = false;
+    carState.cruise       = false;
     speed += Math.floor(9 * ((7 + getRandomInt(5)) / 10));
 }
 
 function decelerateCar(){
-    accelerating = false;
-    decelerating = true;
-    stopped      = false;
-    cruise       = false;
+    carState.accelerating = false;
+    carState.decelerating = true;
+    carState.stopped      = false;
+    carState.cruise       = false;
     speed += Math.floor(-9 * ((7 + getRandomInt(3)) / 10));
 }
 
 function cruiseDrive(){
-    accelerating = false;
-    decelerating = false;
-    stopped      = false;
-    cruise       = true;
+    carState.accelerating = false;
+    carState.decelerating = false;
+    carState.stopped      = false;
+    carState.cruise       = true;
 
     getRandomInt(101) >= 50 ? speed += getRandomInt(5) :  speed -= getRandomInt(3);
 }
 
-module.exports = { startSpeedBroadcast, maxSpeed };
+module.exports = { startSpeedBroadcast, maxSpeed, accelerateCar, decelerateCar, cruiseDrive};

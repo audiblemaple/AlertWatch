@@ -3,7 +3,7 @@ const {maxSpeed} = process.env;
 const WebSocket = require("ws");
 const {playSound, askForUserConfirmation} = require("./util/sound");
 const {printToConsole} = require("./util/util");
-const {startSpeedBroadcast} = require("./util/carManager");
+const {startSpeedBroadcast, decelerateCar} = require("./util/carManager");
 const {currentDriveObject, updateDriveDataLog} = require("./util/driveLogManager");
 
 const {user_status, locks} = require("./util/const");
@@ -183,6 +183,8 @@ async function handleClientMessage(ws, message, wss) {
                                 // Should ideally loop until response is valid
                                 await playSound(sounds.failedToParse);
                             } else {
+                                decelerateCar();
+                                // TODO: find a way to interrupt this process
                                 await playSound(sounds.decelerating);
                             }
                         }

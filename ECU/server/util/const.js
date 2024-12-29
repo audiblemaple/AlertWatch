@@ -14,10 +14,6 @@ const responseStatus = {
     failedToParse: 2
 }
 
-let locks = {
-    alert_lock: false
-}
-
 const confirmationPhrases = [
     'im alert',
     'i am alert',
@@ -65,4 +61,4 @@ const noResponsePhrases = [
     'clears throat'
 ];
 
-module.exports = { status, units, user_status: responseStatus, locks, confirmationPhrases, noResponsePhrases};
+module.exports = { status, units, responseStatus, confirmationPhrases, noResponsePhrases};
