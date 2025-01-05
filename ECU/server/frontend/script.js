@@ -42,6 +42,20 @@ function createGauge(gaugeConf){
     }).draw();
 }
 
+// Function to send the WebSocket message
+function sendWebSocketMessage(type) {
+    if (socket.readyState === WebSocket.OPEN) {
+        const message = {
+            type: type,      // Replace or parameterize as needed
+            msgData: ""      // Add data if necessary
+        };
+        socket.send(JSON.stringify(message));
+        console.log('Sent message:', message);
+    } else {
+        console.error('WebSocket is not open. Ready state:', socket.readyState);
+    }
+}
+
 // Dynamically update speed gauge value
 function updateSpeed(speed) {
     if (speed <= 0){
@@ -142,3 +156,10 @@ socket.onclose = () => {
 socket.onerror = (error) => {
     console.error("WebSocket error:", error);
 };
+
+// Add click event listener to the button
+document.getElementById('confirm').addEventListener('click', function () {
+    const messageType = 'manual_user_confirmation'; // Define the type as needed
+    sendWebSocketMessage(messageType);
+});
+

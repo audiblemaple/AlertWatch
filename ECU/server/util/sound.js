@@ -10,7 +10,6 @@ const {printToConsole} = require("./util");
 const stemmer = natural.PorterStemmer; // Using Porter Stemmer
 const tokenizer = new natural.WordTokenizer();
 
-
 // Function to mute all streams
 function muteAllStreams() {
   exec("pactl list sink-inputs | grep -oP '(?<=Sink Input #)\\d+'", (err, stdout) => {

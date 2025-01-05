@@ -377,17 +377,17 @@ def postprocess_faces(outputs, pad_w, pad_h, score_threshold=0.67, nms_threshold
     boxes[:, 3] -= pad_h
 
     ''' move left side right + '''
-    # boxes[:, 0] += 5
-    boxes[:, 0] -= 10
+    boxes[:, 0] += 5
+    # boxes[:, 0] -= 10
 
     ''' move top-left side down + '''
-    # boxes[:, 1] += 10
+    boxes[:, 1] += 10
 
     ''' move right side right + '''
-    # boxes[:, 2] -= 20
+    boxes[:, 2] -= 20
 
     ''' move bottom-right side down + '''
-    # boxes[:, 3] -= 5
+    boxes[:, 3] -= 5
 
     # Apply NMS
     # boxes_xywh = boxes.copy()

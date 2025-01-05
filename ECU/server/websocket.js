@@ -3,7 +3,7 @@ const {maxSpeed} = process.env;
 const WebSocket = require("ws");
 const {playSound, askForUserConfirmation} = require("./util/sound");
 const {printToConsole, getSystemData} = require("./util/util");
-const {startSpeedBroadcast, decelerateCar} = require("./util/carManager");
+const {startSpeedBroadcast, decelerateCar, accelerateCar} = require("./util/carManager");
 const {currentDriveObject, updateDriveDataLog} = require("./util/driveLogManager");
 
 const {user_status, locks, sounds} = require("./util/global");
@@ -85,6 +85,7 @@ async function handleClientMessage(ws, message, wss) {
         printToConsole("Received type: " + type)
 
         switch (type) {
+
             case "detection_feed":
                 // Decode the image frame (base64 to buffer)
                 if (!("face_tensors" in msgData) || !("frame" in msgData)) return;
@@ -105,6 +106,7 @@ async function handleClientMessage(ws, message, wss) {
                 });
                 break;
 
+            case "manual_user_confirmation":
             case "accelerate":
                 printToConsole(msgData);
                 break;
@@ -118,88 +120,93 @@ async function handleClientMessage(ws, message, wss) {
                 break;
 
             case "alert": {
-                // --------------------------------------------------------------------------
                 // 1. Check if alert messages are locked (simple semaphore logic)
-                // --------------------------------------------------------------------------
                 if (locks.alert_lock) {
                     printToConsole("alert messages are locked");
                     return;
                 }
                 locks.alert_lock = true;
 
-                // --------------------------------------------------------------------------
-                // 2. Destructure event and set up sound paths
-                // --------------------------------------------------------------------------
-                const { event } = data;
+                console.log(msgData);
 
-                // --------------------------------------------------------------------------
-                // 3. If we’ve triggered a “medium alert” before, play attentionTest
-                //    and loop until user responds or alert is escalated
-                // --------------------------------------------------------------------------
-                if (currentDriveObject.medium_alert_num > 0) {
-                    await playSound(sounds.attentionTest);
+                switch (msgData) {
+                    case "low_average_ear":
+                        await playSound(sounds.takeABreak);
+                        break;
 
-                    try {
-                        // 3A. Wait for user confirmation in a loop
-                        while (true) {
-                            const isConfirmedAlert = await askForUserConfirmation();
+                    case "high_blink_rate":
+                        // not sure if this will be used yet
+                        break;
 
-                            if (isConfirmedAlert === user_status.userResponded) {
-                                // User confirmed alert
-                                printToConsole("User has confirmed being alert.");
-                                await playSound(sounds.takeABreak);
-                                currentDriveObject.consecutive_alert_num = 0;
-                                break;
-                            } else if (isConfirmedAlert === user_status.noResponse) {
-                                // User did not confirm → increment counter
-                                currentDriveObject.consecutive_alert_num += 1;
-                                if (currentDriveObject.consecutive_alert_num >= 1) {
-                                    break;
+                    case "Prolonged_eye_closure":
+                        // 3. If we’ve triggered a “medium alert” before, play attentionTest
+                        //    and loop until user responds or alert is escalated
+                        if (currentDriveObject.medium_alert_num > 0) {
+                            await playSound(sounds.attentionTest);
+
+                            try {
+                                // 3A. Wait for user confirmation in a loop
+                                while (true) {
+                                    const isConfirmedAlert = await askForUserConfirmation();
+
+                                    if (isConfirmedAlert === user_status.userResponded) {
+                                        // User confirmed alert
+                                        printToConsole("User has confirmed being alert.");
+                                        await playSound(sounds.takeABreak);
+                                        currentDriveObject.consecutive_alert_num = 0;
+                                        break;
+                                    } else if (isConfirmedAlert === user_status.noResponse) {
+                                        // User did not confirm → increment counter
+                                        currentDriveObject.consecutive_alert_num += 1;
+                                        if (currentDriveObject.consecutive_alert_num >= 1) {
+                                            break;
+                                        }
+                                        printToConsole("User did not confirm being alert.");
+                                        await playSound(sounds.noResponse);
+                                    } else if (isConfirmedAlert === user_status.failedToParse) {
+                                        // Retry if parse failed
+                                        await playSound(sounds.failedToParse);
+                                    }
                                 }
-                                printToConsole("User did not confirm being alert.");
-                                await playSound(sounds.noResponse);
-                            } else if (isConfirmedAlert === user_status.failedToParse) {
-                                // Retry if parse failed
-                                await playSound(sounds.failedToParse);
+
+                                // 3B. If user never responded, escalate: play decelerateWarning
+                                if (currentDriveObject.consecutive_alert_num >= 1) {
+                                    printToConsole("debug 5");
+                                    currentDriveObject.consecutive_alert_num = 0;
+
+                                    await playSound(sounds.decelerateWarning);
+                                    const isConfirmedAlert = await askForUserConfirmation();
+
+                                    if (isConfirmedAlert === user_status.userResponded) {
+                                        await playSound(sounds.takeABreak);
+                                        currentDriveObject.consecutive_alert_num = 0;
+                                    } else if (isConfirmedAlert === user_status.failedToParse) {
+                                        // Should ideally loop until response is valid, ill do that later...
+                                        await playSound(sounds.failedToParse);
+                                    } else {
+                                        // TODO: find a way to interrupt this process
+                                        await playSound(sounds.decelerating);
+                                        decelerateCar();
+                                    }
+                                }
+
+                            } catch (err) {
+                                // In case anything goes wrong
+                                console.error("Error:", err.message);
+                                locks.alert_lock = true;
                             }
+                            break; // End of "alert" logic when medium_alert_num > 0
                         }
-
-                        // 3B. If user never responded, escalate: play decelerateWarning
-                        if (currentDriveObject.consecutive_alert_num >= 1) {
-                            printToConsole("debug 5");
-                            currentDriveObject.consecutive_alert_num = 0;
-
-                            await playSound(sounds.decelerateWarning);
-                            const isConfirmedAlert = await askForUserConfirmation();
-
-                            if (isConfirmedAlert === user_status.userResponded) {
-                                await playSound(sounds.takeABreak);
-                                currentDriveObject.consecutive_alert_num = 0;
-                            } else if (isConfirmedAlert === user_status.failedToParse) {
-                                // Should ideally loop until response is valid
-                                await playSound(sounds.failedToParse);
-                            } else {
-                                // TODO: find a way to interrupt this process
-                                await playSound(sounds.decelerating);
-                                decelerateCar();
-                            }
+                            // 4. If this is the first time medium_alert_num = 0, just play "takeABreak"
+                        //    and increment the alert count
+                        else {
+                            await playSound(sounds.takeABreak);
+                            currentDriveObject.medium_alert_num += 1;
                         }
+                        break;
 
-                    } catch (err) {
-                        // In case anything goes wrong
-                        console.error("Error:", err.message);
-                        locks.alert_lock = true;
-                    }
-                    console.log(currentDriveObject);
-                    break; // End of "alert" logic when medium_alert_num > 0
-                }
-                // --------------------------------------------------------------------------
-                // 4. If this is the first time medium_alert_num = 0, just play "takeABreak"
-                //    and increment the alert count
-                // --------------------------------------------------------------------------
-                else {
-                    await playSound(sounds.takeABreak);
-                    currentDriveObject.medium_alert_num += 1;
+                    default:
+                        return
                 }
                 break; // End of case "alert"
             }

@@ -132,6 +132,10 @@ button {
     /*left: -300px;*/
 }
 
+#confirm:hover{
+    cursor: pointer;
+}
+
 p {
     margin: 0;
     font-size: 12px;

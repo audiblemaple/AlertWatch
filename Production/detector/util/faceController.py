@@ -73,7 +73,7 @@ def handle_drowsiness_detection(avg_EAR, state, frame):
     # Call time.time() once
     current_time = time.time()
     # Get drowsiness once
-    drowsy, reasons = state.is_drowsy(avg_EAR, state.current_blink_start if state.is_blinking else 0)
+    drowsy, reason = state.is_drowsy(avg_EAR, state.current_blink_start if state.is_blinking else 0)
 
     if drowsy:
         # Handle Video Saving
@@ -91,20 +91,20 @@ def handle_drowsiness_detection(avg_EAR, state, frame):
                 cv2.putText(frame, "DROWSINESS DETECTED!", (10, 100),
                             cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
                 # Consider removing prints or using a faster logging method
-                print(f"Drowsiness Alert: {', '.join(reasons)}")
+                print(f"Drowsiness Alert: {reason}")
 
                 # Launch sound playback in a separate thread
                 # threading.Thread(target=play_alert_sound, daemon=True).start()
                 state.last_alert_time = current_time
-                log_data(state, drowsy, reasons)
+                log_data(state, drowsy, reason)
 
                 threading.Thread(
                     target=send_drowsiness_alert,
-                    args=(WS_URL, RECONNECT_INTERVAL),
+                    args=(WS_URL, RECONNECT_INTERVAL, reason),
                     daemon=True
                 ).start()
 
-def send_drowsiness_alert(ws_url: str, reconnect_interval: int) -> None:
+def send_drowsiness_alert(ws_url: str, reconnect_interval: int, reason: str) -> None:
     """
     Opens a WebSocket connection and sends a JSON message for drowsiness.
     This function is run in a separate thread whenever drowsiness is detected.
@@ -115,7 +115,7 @@ def send_drowsiness_alert(ws_url: str, reconnect_interval: int) -> None:
             try:
                 message = {
                     "type": "alert",
-                    "data": "drowsiness detected!",
+                    "msgData": reason,
                     "event": "drowsiness"
                 }
                 # Convert Python dict to JSON string
