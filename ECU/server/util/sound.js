@@ -4,7 +4,8 @@ const { spawn } = require('child_process');
 
 const ffmpeg = require('fluent-ffmpeg');
 const natural = require('natural');
-const {user_status, confirmationPhrases, noResponsePhrases} = require("./const");
+const {confirmationPhrases, noResponsePhrases} = require("./const");
+const {user_status, locks} = require("./global");
 const {printToConsole} = require("./util");
 const stemmer = natural.PorterStemmer; // Using Porter Stemmer
 const tokenizer = new natural.WordTokenizer();
@@ -45,8 +46,9 @@ function unmuteAllStreams() {
  */
 function playSound(filePath) {
     return new Promise((resolve, reject) => {
-        muteAllStreams();
+        // muteAllStreams();
         const player = spawn('aplay', [filePath]);
+        // const player = spawn('aplay', ['-D', 'plughw:1,0', filePath]);
 
         player.on('error', (err) => {
             console.error(`Error playing sound: ${err.message}`);
@@ -56,11 +58,12 @@ function playSound(filePath) {
         player.on('close', (code) => {
             if (code !== 0) {
                 reject(new Error(`Sound player exited with code ${code}`));
+                locks.alert_lock = false;
             } else {
                 resolve();
             }
         });
-        setTimeout(unmuteAllStreams, 4000);
+        // setTimeout(unmuteAllStreams, 4000);
     });
 }
 

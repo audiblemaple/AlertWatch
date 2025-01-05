@@ -18,7 +18,7 @@ from prePostProcessing import preprocess_face_detection, postprocess_faces, prep
 CLASS_NUM: int = 136 >> 1
 
 ''' Blink Detection Constants '''
-EAR_THRESHOLD: float = 0.17  # Threshold for blink
+EAR_THRESHOLD: float = 0.23  # Threshold for blink
 CONSEC_FRAMES: int = 2       # Frames below threshold for a blink
 
 ''' Buffer Configuration '''

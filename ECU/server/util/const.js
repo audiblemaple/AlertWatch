@@ -8,12 +8,6 @@ const units ={
     second: 1000,
 }
 
-const responseStatus = {
-    noResponse: 0,
-    userResponded: 1,
-    failedToParse: 2
-}
-
 const confirmationPhrases = [
     'im alert',
     'i am alert',
@@ -61,4 +55,4 @@ const noResponsePhrases = [
     'clears throat'
 ];
 
-module.exports = { status, units, responseStatus, confirmationPhrases, noResponsePhrases};
+module.exports = { status, units, confirmationPhrases, noResponsePhrases};

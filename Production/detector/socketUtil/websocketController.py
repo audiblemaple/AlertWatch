@@ -14,13 +14,18 @@ class WebSocketClient:
         self.first_connection = True
 
     async def connect(self):
+        i: int = 0
         while self.websocket is None:
+            if i == 2:
+                break
             try:
                 self.websocket = await websockets.connect(self.ws_url)
                 print("WebSocket connection established.")
             except Exception as e:
                 print(f"Connection failed: {e}. Retrying in {self.reconnect_interval} seconds.")
                 await asyncio.sleep(self.reconnect_interval)
+                i = i + 1
+
 
     async def run_bash_commands(self):
         """

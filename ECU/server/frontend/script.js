@@ -44,9 +44,15 @@ function createGauge(gaugeConf){
 
 // Dynamically update speed gauge value
 function updateSpeed(speed) {
-    gauge.value = speed;
-    gauge.valueText = speed
-    document.getElementById('speedValue').textContent = speed;
+    if (speed <= 0){
+        gauge.value = 0;
+        gauge.valueText = 0
+        document.getElementById('speedValue').textContent = "0";
+    }else {
+        gauge.value = speed;
+        gauge.valueText = speed
+        document.getElementById('speedValue').textContent = speed;
+    }
 }
 
 //const socket = new WebSocket("ws://192.168.0.233:5000");

@@ -57,9 +57,9 @@ def display_fps(frame, fps, avg_fps):
     timestamp = datetime.datetime.now()
     cv2.putText(frame, f"FPS: {fps:.2f}", (10, 30),
                 cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
-    cv2.putText(frame, f"Avg FPS: {avg_fps:.2f}", (200, 30),
+    cv2.putText(frame, f"Avg FPS: {avg_fps:.2f}", (220, 30),
                 cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 0), 2, cv2.LINE_AA)
-    cv2.putText(frame, f"timestamp: {timestamp.strftime('%Y-%m-%d_%H-%M-%S')}", (10, 400),
+    cv2.putText(frame, f"timestamp: {timestamp.strftime('%Y-%m-%d_%H-%M-%S')}", (10, 470),
                 cv2.FONT_HERSHEY_SIMPLEX, 1, (100, 250, 100), 2, cv2.LINE_AA)
 
 
@@ -73,9 +73,9 @@ def display_blink_info(frame, blink_count, total_blinks, blink_durations) -> Non
         total_blinks (int): Total number of blinks detected.
         blink_durations (list): List of blink durations.
     """
-    cv2.putText(frame, f"Blinks: {blink_count}", (10, 300),
+    cv2.putText(frame, f"Blinks: {blink_count}", (10, 400),
                 cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
-    cv2.putText(frame, f"Total Blinks: {total_blinks}", (10, 330),
+    cv2.putText(frame, f"Total Blinks: {total_blinks}", (10, 435),
                 cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2, cv2.LINE_AA)
 
     if blink_durations:
