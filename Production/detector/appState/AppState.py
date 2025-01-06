@@ -91,10 +91,10 @@ class AppState:
             reason = "high_blink_rate"
 
         # Condition #2: Prolonged eye closure
-        # if prolonged_EAR:
-        #     drowsy = True
-        #     # reasons.append("Prolonged eye closure detected")
-        #     reason = "Prolonged_eye_closure"
+        if prolonged_EAR:
+            drowsy = True
+            # reasons.append("Prolonged eye closure detected")
+            reason = "Prolonged_eye_closure"
 
         # Condition #3: Low average EAR
         now = time.time()
