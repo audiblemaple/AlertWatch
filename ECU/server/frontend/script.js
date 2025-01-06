@@ -163,3 +163,21 @@ document.getElementById('confirm').addEventListener('click', function () {
     sendWebSocketMessage(messageType);
 });
 
+
+
+const wssn = new WebSocket('ws://192.168.0.63:8765/');  // Adjust host/port as needed
+
+wssn.onopen = () => {
+    console.log("Connected to the WebSocket server");
+};
+
+wssn.onmessage = (event) => {
+    // event.data is the base64-encoded JPEG
+    const base64Image = event.data;
+    const imgElem = document.getElementById("video-frame");
+    imgElem.src = "data:image/jpeg;base64," + base64Image;
+};
+
+wssn.onclose = () => {
+    console.log("WebSocket connection closed");
+};
