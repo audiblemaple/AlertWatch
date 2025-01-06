@@ -238,7 +238,7 @@ async def start_websocket_server():
         await asyncio.Future()  # run forever
 
 def main():
-    initialize_logging()
+    # initialize_logging()
 
     face_det = "../models/hailo8/scrfd_10g.hef"
     face_landmarks = "../models/hailo8/face-landmarks-detection.hef"

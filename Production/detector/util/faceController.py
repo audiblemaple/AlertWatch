@@ -6,7 +6,7 @@ import time
 
 import cv2
 
-from Production.detector.logger import log_data
+# from Production.detector.logger import log_data
 from Production.detector.socketUtil import initialize_websocket
 from Production.detector.util import save_video_sync, calculate_EAR
 
@@ -96,7 +96,7 @@ def handle_drowsiness_detection(avg_EAR, state, frame):
                 # Launch sound playback in a separate thread
                 # threading.Thread(target=play_alert_sound, daemon=True).start()
                 state.last_alert_time = current_time
-                log_data(state, drowsy, reason)
+                # log_data(state, drowsy, reason)
 
                 threading.Thread(
                     target=send_drowsiness_alert,
