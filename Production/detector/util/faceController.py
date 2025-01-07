@@ -7,8 +7,9 @@ import time
 import cv2
 
 # from Production.detector.logger import log_data
-from Production.detector.socketUtil import initialize_websocket
-from Production.detector.util import save_video_sync, calculate_EAR
+from .eyeController import  calculate_EAR
+from .websocketController import initialize_websocket
+from .videoController import save_video_sync
 
 # WS_URL: str = "ws://192.168.0.239:5000"
 WS_URL: str = "ws://192.168.0.63:5000"
@@ -23,7 +24,6 @@ def process_bounding_box(face, frame):
     y1 = max(0, int(y1))
     x2 = min(w, int(x2))
     y2 = min(h, int(y2) - 10)
-
 
     return x1, y1, x2, y2, score
 
@@ -76,16 +76,22 @@ def handle_drowsiness_detection(avg_EAR, state, frame):
     drowsy, reason = state.is_drowsy(avg_EAR, state.current_blink_start if state.is_blinking else 0)
 
     if drowsy:
-        # Handle Video Saving
+        ''' Handle Video Saving '''
         with state.video_lock:
             if (current_time - state.last_video_time) >= state.debounce_time_video:
                 timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
                 output_filename = f"videos/blink_detected_{timestamp}.avi"
                 # Consider optimizing save_video_sync or using a faster codec
-                save_video_sync(state.frame_buffer, state.fps, output_filename)
+                # 2) Start a background thread for saving video
+                video_thread = threading.Thread(
+                    target=save_video_sync,
+                    args=(state.frame_buffer, state.fps, output_filename),
+                    daemon=True  # Use daemon=True so it won't block app exit
+                )
+                video_thread.start()
                 state.last_video_time = current_time
 
-        # Handle Alerts
+        ''' Handle Alerts '''
         with state.alert_lock:
             if (current_time - state.last_alert_time) >= state.debounce_time_alert:
                 cv2.putText(frame, "DROWSINESS DETECTED!", (10, 100),
@@ -93,8 +99,6 @@ def handle_drowsiness_detection(avg_EAR, state, frame):
                 # Consider removing prints or using a faster logging method
                 print(f"Drowsiness Alert: {reason}")
 
-                # Launch sound playback in a separate thread
-                # threading.Thread(target=play_alert_sound, daemon=True).start()
                 state.last_alert_time = current_time
                 # log_data(state, drowsy, reason)
 

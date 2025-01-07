@@ -41,6 +41,7 @@ const confirmationPhrases = [
     'i\'m on alert',
     'all good',
     'i\'m okay',
+    'i\'m good',
     'i am okay',
     'okay',
     'everything is fine',

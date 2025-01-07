@@ -80,5 +80,5 @@ def display_blink_info(frame, blink_count, total_blinks, blink_durations) -> Non
 
     if blink_durations:
         average_duration = sum(blink_durations) / len(blink_durations)
-        cv2.putText(frame, f"Avg Blink Dur: {average_duration:.2f}s", (270, 330),
+        cv2.putText(frame, f"Avg Blink Dur: {average_duration:.2f}s", (280, 380),
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 255), 2, cv2.LINE_AA)

@@ -96,8 +96,9 @@ html {
 #video-container {
     position: relative;
     min-height: 20svh;
-    height: 50svh;
-    width: auto;
+    /*height: 62svh;*/
+    height: 550px;
+    /*width: auto;*/
     /*overflow: hidden;*/
 }
 
@@ -110,6 +111,8 @@ html {
 
 img{
     border-radius: 20px;
+    height: 480px;
+    width: 680px;
 }
 
 #tensor-container p {

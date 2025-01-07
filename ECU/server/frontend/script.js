@@ -165,7 +165,7 @@ document.getElementById('confirm').addEventListener('click', function () {
 
 
 
-const wssn = new WebSocket('ws://192.168.0.63:8765/');  // Adjust host/port as needed
+const wssn = new WebSocket('ws://192.168.0.252:8765/');  // Adjust host/port as needed
 
 wssn.onopen = () => {
     console.log("Connected to the WebSocket server");
@@ -179,5 +179,22 @@ wssn.onmessage = (event) => {
 };
 
 wssn.onclose = () => {
+    console.log("WebSocket connection closed");
+};
+
+const wssnn = new WebSocket('ws://192.168.0.63:8765/');  // Adjust host/port as needed
+
+wssnn.onopen = () => {
+    console.log("Connected to the WebSocket server");
+};
+
+wssnn.onmessage = (event) => {
+    // event.data is the base64-encoded JPEG
+    const base64Image = event.data;
+    const imgElem = document.getElementById("videoFeed");
+    imgElem.src = "data:image/jpeg;base64," + base64Image;
+};
+
+wssnn.onclose = () => {
     console.log("WebSocket connection closed");
 };

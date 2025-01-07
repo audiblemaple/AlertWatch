@@ -1,0 +1,290 @@
+#!/usr/bin/env python3
+
+import time
+import cv2
+import numpy as np
+import os
+import threading
+from collections import deque
+import base64
+import asyncio
+from websockets.server import serve
+import platform
+
+from inference import initialize_inference_models
+# from logger   import initialize_logging
+from util     import (
+    init_cv_cap, handle_blink_detection, handle_drowsiness_detection,
+    run_landmark_inference, AppState
+)
+from drawUtil   import (
+    draw_bounding_box, display_fps, draw_landmarks, display_blink_info
+)
+from prePostProcessing import (
+    preprocess_face_detection, postprocess_faces,
+    preprocess_face_landmarks, adjust_landmarks
+)
+
+''' Constants '''
+CLASS_NUM: int = 136 >> 1
+
+''' Blink Detection Constants '''
+EAR_THRESHOLD: float = 0.25
+CONSEC_FRAMES: int = 2  # Frames below threshold for a blink
+
+''' Buffer Configuration '''
+BUFFER_DURATION: int = 30  # seconds
+
+''' Frames to skip when detecting faces '''
+FRAMES_TO_SKIP: int = 4
+
+''' The face to store when skipping frames '''
+FACES: int | None = None
+
+latest_frame = None  # We'll store the latest frame here so the WS server can access it
+lock = threading.Lock()
+
+def ensure_directory_exists(directory: str) -> None:
+    """Create directory if it doesn't exist."""
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+        print(f"Created directory: {directory}")
+
+def handle_faces(
+    faces, frame, hailo_inference, face_land_output_name,
+    face_landmarks_input_shape, all_landmarks, state: AppState, tensors
+) -> None:
+    """Handle detected faces: run landmark inference, blink, drowsiness detection."""
+    x1, y1, x2, y2, score = faces[0]
+    draw_bounding_box(frame, score, (x1, y1), (x2, y2))
+
+    preprocessed_face, adjusted_bbox = preprocess_face_landmarks(
+        frame, (x1, y1, x2, y2), face_landmarks_input_shape
+    )
+    if preprocessed_face is None or preprocessed_face.size != 50176:
+        # Avoid printing inside hot loop if possible
+        return
+
+    # Run Landmark Inference
+    landmarks = run_landmark_inference(
+        hailo_inference, preprocessed_face, face_land_output_name, CLASS_NUM
+    )
+    if landmarks is None:
+        return
+
+    try:
+        adjusted_landmarks = adjust_landmarks(
+            landmarks, (x1, y1, x2 - x1, y2 - y1)
+        )
+        all_landmarks.append(adjusted_landmarks)
+
+        # Blink Detection
+        left_eye = adjusted_landmarks[42:48]
+        right_eye = adjusted_landmarks[36:42]
+        avg_EAR = handle_blink_detection(
+            left_eye, right_eye, state, EAR_THRESHOLD, CONSEC_FRAMES
+        )
+        state.add_ear_measurement(avg_EAR)
+
+        # Display EAR
+        cv2.putText(
+            frame, f"EAR: {avg_EAR:.2f}", (10, 60),
+            cv2.FONT_HERSHEY_SIMPLEX, 1, (100, 250, 100), 2, cv2.LINE_AA
+        )
+
+        # Drowsiness Detection
+        handle_drowsiness_detection(avg_EAR, state, frame)
+
+    except ValueError:
+        return
+    except Exception as e:
+        # Log or handle unexpected exceptions
+        print(f"Error in landmark processing: {e}")
+        return
+
+    # Store extra data if needed
+    tensors.append({
+        'x1': x1, 'y1': y1, 'x2': x2, 'y2': y2,
+        'score': float(score)
+    })
+
+def get_faces(frame, hailo_inference, face_detection_input_shape) -> list[(int, int, int, int, float)] | None:
+    """Preprocess frame, run face detection, and return bounding boxes."""
+    preprocessed_frame, scale, pad_w, pad_h, img_w, img_h = preprocess_face_detection(
+        frame, input_size=(face_detection_input_shape[0], face_detection_input_shape[1])
+    )
+
+    # Check size validity
+    if preprocessed_frame.size != 1228800:
+        return None
+
+    # In-place cast if possible
+    preprocessed_frame = preprocessed_frame.astype(np.float32, copy=False)
+    preprocessed_frame = preprocessed_frame[np.newaxis, :, :, :]
+
+    # Running inference for face detection
+    raw_faces = hailo_inference.run(model_id=1, input_data=preprocessed_frame)
+    return postprocess_faces(raw_faces, pad_w, pad_h)
+
+def video_processing_loop(
+    hailo_inference, face_detection_input_shape, face_landmarks_input_shape,
+    face_land_output_name, state: AppState
+):
+    """Continually capture frames, run face detection/landmarks, and manage display."""
+    global latest_frame
+
+    cap = init_cv_cap(640, 480, 70)
+    if cap is None or not cap.isOpened():
+        print("Error: Could not open camera.")
+        return
+
+    fps_start_time = time.perf_counter()
+    total_start_time = fps_start_time
+    total_frames = 0
+    face_buff = None
+
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            print("Error: Failed to capture image.")
+            break
+
+        total_frames += 1
+
+        # Append to buffer if you truly need historical frames
+        # Minimizing copies can save CPU overhead
+        state.frame_buffer.append(frame)
+
+        # Calculate instantaneous FPS
+        fps_end_time = time.perf_counter()
+        time_diff = fps_end_time - fps_start_time
+        total_time = fps_end_time - total_start_time
+        # Update state.fps only if time_diff > 0
+        if time_diff > 0:
+            state.fps = 1.0 / time_diff
+        fps_start_time = fps_end_time
+
+        # Average FPS
+        avg_fps = total_frames / total_time if total_time > 0 else 0.0
+
+        # Face detection every FRAMES_TO_SKIP frames
+        if total_frames % FRAMES_TO_SKIP == 0:
+            face = get_faces(frame, hailo_inference, face_detection_input_shape)
+            if face is not None:
+                face_buff = face
+        else:
+            face = face_buff
+
+        # If no face detected, just show the frame
+        if not face:
+            with lock:
+                latest_frame = frame
+            if platform.node() != 'hailo15':
+                cv2.imshow('Webcam Face Landmarks', frame)
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    print("Quitting...")
+                    break
+            continue
+
+        # If face is found, run landmark inference
+        all_landmarks = []
+        tensors = []
+        handle_faces(
+            face, frame, hailo_inference, face_land_output_name,
+            face_landmarks_input_shape, all_landmarks, state, tensors
+        )
+
+        # Draw landmarks, display FPS & blink info
+        if all_landmarks:
+            draw_landmarks(frame, all_landmarks)
+
+        display_fps(frame, state.fps, avg_fps)
+        display_blink_info(
+            frame, state.blink_counter, state.total_blinks, state.blink_durations
+        )
+
+        if platform.node() != 'hailo15':
+            cv2.imshow('Webcam Face Landmarks', frame)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                print("Quitting...")
+                break
+
+        # Update latest_frame for the WS server
+        with lock:
+            latest_frame = frame
+
+    cap.release()
+    cv2.destroyAllWindows()
+
+async def send_frames(websocket):
+    """Continuously send frames to connected client over WebSocket."""
+    while True:
+        with lock:
+            frame_copy = latest_frame if latest_frame is not None else None
+
+        if frame_copy is not None:
+            # Encode the frame as JPEG (returns success flag and encoded img)
+            _, jpeg_data = cv2.imencode('.jpg', frame_copy)
+            # Convert to base64
+            b64_bytes = base64.b64encode(jpeg_data)
+            b64_string = b64_bytes.decode('utf-8')
+
+            # Send the base64 string
+            await websocket.send(b64_string)
+
+        # Slight throttle to avoid saturating CPU
+        await asyncio.sleep(0.03)  # ~ 30 FPS
+
+async def websocket_handler(websocket, path):
+    """Handle new WebSocket connection."""
+    print("New client connected")
+    try:
+        await send_frames(websocket)
+    except Exception as e:
+        print(f"Client disconnected: {e}")
+
+async def start_websocket_server():
+    """Launch the WebSocket server on port 8765."""
+    async with serve(websocket_handler, "0.0.0.0", 8765):
+        print("WebSocket server started on ws://0.0.0.0:8765")
+        await asyncio.Future()  # run forever
+
+def main():
+    # initialize_logging()
+
+    face_det = f"../models/hailo{'15H' if platform.node() == 'hailo15' else '8'}/scrfd_10g.hef"
+    face_landmarks = f"../models/hailo{'15H' if platform.node() == 'hailo15' else '8'}/face-landmarks-detection.hef"
+
+    state = AppState()
+    ensure_directory_exists('videos')
+
+    (hailo_inference,
+     face_detection_input_shape,
+     face_landmarks_input_shape,
+     face_land_output_name) = initialize_inference_models(
+         face_det, face_landmarks
+    )
+
+    # Estimate FPS if not known
+    estimated_fps = 60
+    state.fps = estimated_fps
+    state.buffer_size = int(estimated_fps * BUFFER_DURATION)
+    state.frame_buffer = deque(maxlen=state.buffer_size)
+    print(f"Estimated FPS: {state.fps:.2f}. Buffer size set to {state.buffer_size} frames.")
+
+    # Run video processing in a separate thread
+    video_thread = threading.Thread(
+        target=video_processing_loop,
+        args=(hailo_inference, face_detection_input_shape,
+              face_landmarks_input_shape, face_land_output_name, state),
+        daemon=True
+    )
+    video_thread.start()
+
+    # Start the asyncio event loop for the WebSocket server
+    asyncio.run(start_websocket_server())
+
+    video_thread.join()
+
+if __name__ == '__main__':
+    main()

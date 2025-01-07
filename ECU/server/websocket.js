@@ -152,7 +152,7 @@ async function handleClientMessage(ws, message, wss) {
                                     if (isConfirmedAlert === user_status.userResponded) {
                                         // User confirmed alert
                                         printToConsole("User has confirmed being alert.");
-                                        await playSound(sounds.takeABreak);
+                                        await playSound(sounds.gotIt);
                                         currentDriveObject.consecutive_alert_num = 0;
                                         break;
                                     } else if (isConfirmedAlert === user_status.noResponse) {
@@ -174,11 +174,11 @@ async function handleClientMessage(ws, message, wss) {
                                     printToConsole("debug 5");
                                     currentDriveObject.consecutive_alert_num = 0;
 
-                                    await playSound(sounds.decelerateWarning);
+                                    await playSound(sounds.failedToParse);
                                     const isConfirmedAlert = await askForUserConfirmation();
 
                                     if (isConfirmedAlert === user_status.userResponded) {
-                                        await playSound(sounds.takeABreak);
+                                        await playSound(sounds.gotIt);
                                         currentDriveObject.consecutive_alert_num = 0;
                                     } else if (isConfirmedAlert === user_status.failedToParse) {
                                         // Should ideally loop until response is valid, ill do that later...

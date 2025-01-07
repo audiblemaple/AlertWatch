@@ -2,7 +2,7 @@ import os
 import cv2
 import time
 import asyncio
-from Production.detector.appState import AppState
+from .AppState import AppState
 
 # Save video function (synchronous version)
 def save_video_sync(buffer, fps, output_path='output_blink_detected.avi'):

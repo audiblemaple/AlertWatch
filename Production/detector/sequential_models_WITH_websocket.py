@@ -10,10 +10,9 @@ import base64
 import asyncio
 from websockets.server import serve
 
-from appState   import AppState
 from inference  import initialize_inference_models
 # from logger     import initialize_logging
-from util       import init_cv_cap, handle_blink_detection, handle_drowsiness_detection, process_bounding_box, run_landmark_inference
+from util       import init_cv_cap, handle_blink_detection, handle_drowsiness_detection, process_bounding_box, run_landmark_inference, AppState
 from drawUtil   import draw_bounding_box, display_fps, draw_landmarks, display_blink_info
 from prePostProcessing import preprocess_face_detection, postprocess_faces, preprocess_face_landmarks, adjust_landmarks
 
@@ -115,7 +114,7 @@ def get_faces(frame, hailo_inference, face_detection_input_shape) -> list[(int, 
 
 def video_processing_loop(hailo_inference, face_detection_input_shape, face_landmarks_input_shape, face_land_output_name, state: AppState):
     global latest_frame
-    cap = init_cv_cap(640, 360, 70)
+    cap = init_cv_cap(640, 480, 70)
     if cap is None:
         print("Error: Could not open camera.")
         return
