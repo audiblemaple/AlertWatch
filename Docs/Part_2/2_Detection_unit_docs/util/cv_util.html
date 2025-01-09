@@ -1,0 +1,71 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module cv_util</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong>cv_util</strong></big></big></font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/bedrock/Desktop/project/AlertWatch/Production/detector/util/cv_util.py">/home/bedrock/Desktop/project/AlertWatch/Production/detector/util/cv_util.py</a></font></td></tr></table>
+    <p><tt>Camera&nbsp;Initialization&nbsp;Utility<br>
+&nbsp;<br>
+This&nbsp;module&nbsp;provides&nbsp;a&nbsp;utility&nbsp;function&nbsp;for&nbsp;initializing&nbsp;a&nbsp;video&nbsp;capture&nbsp;object&nbsp;using&nbsp;OpenCV.<br>
+&nbsp;<br>
+Functions:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;init_cv_cap:&nbsp;Initializes&nbsp;a&nbsp;video&nbsp;capture&nbsp;object&nbsp;for&nbsp;live&nbsp;video&nbsp;input&nbsp;or&nbsp;video&nbsp;file&nbsp;playback.<br>
+&nbsp;<br>
+Dependencies:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;sys:&nbsp;For&nbsp;platform-specific&nbsp;checks.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;cv2:&nbsp;OpenCV&nbsp;library&nbsp;for&nbsp;video&nbsp;capture&nbsp;and&nbsp;manipulation.<br>
+&nbsp;<br>
+Usage:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Use&nbsp;the&nbsp;`init_cv_cap`&nbsp;function&nbsp;to&nbsp;create&nbsp;a&nbsp;video&nbsp;capture&nbsp;object&nbsp;for&nbsp;accessing&nbsp;live&nbsp;video&nbsp;from&nbsp;a&nbsp;camera<br>
+&nbsp;&nbsp;&nbsp;&nbsp;or&nbsp;reading&nbsp;from&nbsp;a&nbsp;video&nbsp;file.<br>
+&nbsp;<br>
+Author:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Lior&nbsp;Jigalo<br>
+&nbsp;<br>
+License:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;MIT</tt></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="cv2.html">cv2</a><br>
+</td><td width="25%" valign=top><a href="sys.html">sys</a><br>
+</td><td width="25%" valign=top></td><td width="25%" valign=top></td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#eeaa77">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt><a name="-init_cv_cap"><strong>init_cv_cap</strong></a>(width=640, height=640, fps=30, videopath=None)</dt><dd><tt>Initializes&nbsp;an&nbsp;OpenCV&nbsp;video&nbsp;capture&nbsp;object&nbsp;with&nbsp;specified&nbsp;properties.<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;width&nbsp;(int):&nbsp;Desired&nbsp;width&nbsp;of&nbsp;the&nbsp;video&nbsp;frame&nbsp;(default:&nbsp;640).<br>
+&nbsp;&nbsp;&nbsp;&nbsp;height&nbsp;(int):&nbsp;Desired&nbsp;height&nbsp;of&nbsp;the&nbsp;video&nbsp;frame&nbsp;(default:&nbsp;640).<br>
+&nbsp;&nbsp;&nbsp;&nbsp;fps&nbsp;(int):&nbsp;Desired&nbsp;frames&nbsp;per&nbsp;second&nbsp;for&nbsp;the&nbsp;video&nbsp;capture&nbsp;(default:&nbsp;30).<br>
+&nbsp;&nbsp;&nbsp;&nbsp;videopath&nbsp;(str&nbsp;|&nbsp;None):&nbsp;Path&nbsp;to&nbsp;a&nbsp;video&nbsp;file&nbsp;for&nbsp;playback.&nbsp;If&nbsp;None,&nbsp;uses&nbsp;a&nbsp;live&nbsp;video&nbsp;source.<br>
+&nbsp;<br>
+Returns:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;cv2.VideoCapture:&nbsp;An&nbsp;OpenCV&nbsp;video&nbsp;capture&nbsp;object&nbsp;configured&nbsp;with&nbsp;the&nbsp;specified&nbsp;properties.<br>
+&nbsp;<br>
+Notes:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;On&nbsp;Windows,&nbsp;the&nbsp;`cv2.CAP_DSHOW`&nbsp;backend&nbsp;is&nbsp;used&nbsp;for&nbsp;capturing&nbsp;live&nbsp;video.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;On&nbsp;non-Windows&nbsp;platforms,&nbsp;`/dev/video0`&nbsp;with&nbsp;`cv2.CAP_V4L2`&nbsp;is&nbsp;used&nbsp;as&nbsp;the&nbsp;default&nbsp;video&nbsp;source.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;The&nbsp;video&nbsp;capture&nbsp;is&nbsp;configured&nbsp;with&nbsp;the&nbsp;YUYV&nbsp;pixel&nbsp;format.<br>
+&nbsp;<br>
+Example:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;To&nbsp;initialize&nbsp;a&nbsp;camera&nbsp;capture:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&gt;&gt;&gt;&nbsp;cap&nbsp;=&nbsp;<a href="#-init_cv_cap">init_cv_cap</a>(1280,&nbsp;720,&nbsp;60)<br>
+&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;To&nbsp;initialize&nbsp;playback&nbsp;from&nbsp;a&nbsp;video&nbsp;file:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&gt;&gt;&gt;&nbsp;cap&nbsp;=&nbsp;<a href="#-init_cv_cap">init_cv_cap</a>(videopath="example.mp4")</tt></dd></dl>
+</td></tr></table>
+</body></html>

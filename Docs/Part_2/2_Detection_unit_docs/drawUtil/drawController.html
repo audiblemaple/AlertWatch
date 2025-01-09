@@ -1,0 +1,102 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module drawController</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong>drawController</strong></big></big></font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/bedrock/Desktop/project/AlertWatch/Production/detector/drawUtil/drawController.py">/home/bedrock/Desktop/project/AlertWatch/Production/detector/drawUtil/drawController.py</a></font></td></tr></table>
+    <p><tt>Drawing&nbsp;Utilities&nbsp;for&nbsp;Video&nbsp;Frames<br>
+&nbsp;<br>
+This&nbsp;module&nbsp;provides&nbsp;utility&nbsp;functions&nbsp;for&nbsp;annotating&nbsp;video&nbsp;frames&nbsp;with&nbsp;various&nbsp;information,<br>
+including&nbsp;bounding&nbsp;boxes,&nbsp;text,&nbsp;landmarks,&nbsp;head&nbsp;pose,&nbsp;and&nbsp;performance&nbsp;metrics&nbsp;like&nbsp;FPS.<br>
+&nbsp;<br>
+Functions:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;draw_bounding_box:&nbsp;Draws&nbsp;a&nbsp;bounding&nbsp;box&nbsp;with&nbsp;a&nbsp;detection&nbsp;score&nbsp;on&nbsp;the&nbsp;frame.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;draw_text:&nbsp;Displays&nbsp;text&nbsp;at&nbsp;a&nbsp;specific&nbsp;location&nbsp;on&nbsp;the&nbsp;frame.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;draw_landmarks:&nbsp;Draws&nbsp;detected&nbsp;landmarks&nbsp;on&nbsp;the&nbsp;frame.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;draw_head_pose:&nbsp;Visualizes&nbsp;head&nbsp;pose&nbsp;using&nbsp;3D&nbsp;axes&nbsp;on&nbsp;the&nbsp;frame.&nbsp;(unused)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;display_fps:&nbsp;Displays&nbsp;current&nbsp;and&nbsp;average&nbsp;FPS&nbsp;on&nbsp;the&nbsp;frame.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;display_blink_info:&nbsp;Displays&nbsp;blink-related&nbsp;information&nbsp;on&nbsp;the&nbsp;frame.<br>
+&nbsp;<br>
+Dependencies:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;OpenCV&nbsp;(cv2):&nbsp;For&nbsp;image&nbsp;processing&nbsp;and&nbsp;drawing&nbsp;operations.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;NumPy:&nbsp;For&nbsp;numerical&nbsp;computations&nbsp;and&nbsp;matrix&nbsp;manipulations.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;datetime:&nbsp;For&nbsp;timestamping&nbsp;frames.<br>
+&nbsp;<br>
+Usage:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Import&nbsp;the&nbsp;module&nbsp;and&nbsp;use&nbsp;the&nbsp;functions&nbsp;to&nbsp;annotate&nbsp;video&nbsp;frames&nbsp;during&nbsp;real-time&nbsp;video&nbsp;processing.<br>
+&nbsp;<br>
+Author:<br>
+Lior&nbsp;Jigalo<br>
+&nbsp;<br>
+License:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;MIT</tt></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="cv2.html">cv2</a><br>
+</td><td width="25%" valign=top><a href="datetime.html">datetime</a><br>
+</td><td width="25%" valign=top><a href="numpy.html">numpy</a><br>
+</td><td width="25%" valign=top></td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#eeaa77">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt><a name="-display_blink_info"><strong>display_blink_info</strong></a>(frame, blink_count, total_blinks, blink_durations) -&gt; None</dt><dd><tt>Displays&nbsp;blink&nbsp;count&nbsp;and&nbsp;average&nbsp;blink&nbsp;duration&nbsp;on&nbsp;the&nbsp;frame.<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;frame&nbsp;(np.ndarray):&nbsp;The&nbsp;video&nbsp;frame&nbsp;to&nbsp;annotate.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;blink_count&nbsp;(int):&nbsp;Number&nbsp;of&nbsp;blinks&nbsp;detected&nbsp;in&nbsp;the&nbsp;current&nbsp;session.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;total_blinks&nbsp;(int):&nbsp;Total&nbsp;number&nbsp;of&nbsp;blinks&nbsp;detected.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;blink_durations&nbsp;(list&nbsp;of&nbsp;float):&nbsp;List&nbsp;of&nbsp;blink&nbsp;durations&nbsp;in&nbsp;seconds.</tt></dd></dl>
+ <dl><dt><a name="-display_fps"><strong>display_fps</strong></a>(frame, fps, avg_fps) -&gt; None</dt><dd><tt>Displays&nbsp;current&nbsp;and&nbsp;average&nbsp;FPS&nbsp;on&nbsp;the&nbsp;frame.<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;frame&nbsp;(np.ndarray):&nbsp;The&nbsp;video&nbsp;frame&nbsp;to&nbsp;annotate.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;fps&nbsp;(float):&nbsp;Current&nbsp;frames&nbsp;per&nbsp;second.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;avg_fps&nbsp;(float):&nbsp;Average&nbsp;frames&nbsp;per&nbsp;second.</tt></dd></dl>
+ <dl><dt><a name="-draw_bounding_box"><strong>draw_bounding_box</strong></a>(frame, score, p1, p2, color=(0, 255, 0), size=2) -&gt; None</dt><dd><tt>Draws&nbsp;a&nbsp;bounding&nbsp;box&nbsp;with&nbsp;the&nbsp;detection&nbsp;confidence&nbsp;score.<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;frame&nbsp;(np.ndarray):&nbsp;The&nbsp;video&nbsp;frame&nbsp;to&nbsp;annotate.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;score&nbsp;(float):&nbsp;Confidence&nbsp;score&nbsp;of&nbsp;the&nbsp;detection.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;p1&nbsp;(tuple):&nbsp;Top-left&nbsp;corner&nbsp;of&nbsp;the&nbsp;bounding&nbsp;box&nbsp;(x,&nbsp;y).<br>
+&nbsp;&nbsp;&nbsp;&nbsp;p2&nbsp;(tuple):&nbsp;Bottom-right&nbsp;corner&nbsp;of&nbsp;the&nbsp;bounding&nbsp;box&nbsp;(x,&nbsp;y).<br>
+&nbsp;&nbsp;&nbsp;&nbsp;color&nbsp;(tuple):&nbsp;Color&nbsp;of&nbsp;the&nbsp;bounding&nbsp;box&nbsp;in&nbsp;BGR&nbsp;format&nbsp;(default:&nbsp;green).<br>
+&nbsp;&nbsp;&nbsp;&nbsp;size&nbsp;(int):&nbsp;Thickness&nbsp;of&nbsp;the&nbsp;bounding&nbsp;box&nbsp;(default:&nbsp;2).</tt></dd></dl>
+ <dl><dt><a name="-draw_head_pose"><strong>draw_head_pose</strong></a>(frame, rotation_vector, translation_vector, camera_matrix) -&gt; cv2.Mat | numpy.ndarray</dt><dd><tt>Visualizes&nbsp;head&nbsp;pose&nbsp;using&nbsp;3D&nbsp;axes&nbsp;projected&nbsp;onto&nbsp;the&nbsp;frame.<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;frame&nbsp;(np.ndarray):&nbsp;The&nbsp;video&nbsp;frame&nbsp;to&nbsp;annotate.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;rotation_vector&nbsp;(np.ndarray):&nbsp;Rotation&nbsp;vector&nbsp;of&nbsp;the&nbsp;head&nbsp;pose.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;translation_vector&nbsp;(np.ndarray):&nbsp;Translation&nbsp;vector&nbsp;of&nbsp;the&nbsp;head&nbsp;pose.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;camera_matrix&nbsp;(np.ndarray):&nbsp;Camera&nbsp;matrix&nbsp;for&nbsp;the&nbsp;projection.<br>
+&nbsp;<br>
+Returns:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;np.ndarray:&nbsp;The&nbsp;annotated&nbsp;video&nbsp;frame.</tt></dd></dl>
+ <dl><dt><a name="-draw_landmarks"><strong>draw_landmarks</strong></a>(frame, all_landmarks) -&gt; None</dt><dd><tt>Draws&nbsp;detected&nbsp;landmarks&nbsp;as&nbsp;points&nbsp;on&nbsp;the&nbsp;frame.<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;frame&nbsp;(np.ndarray):&nbsp;The&nbsp;video&nbsp;frame&nbsp;to&nbsp;annotate.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;all_landmarks&nbsp;(list&nbsp;of&nbsp;list&nbsp;of&nbsp;tuple):&nbsp;List&nbsp;of&nbsp;detected&nbsp;landmarks,&nbsp;where&nbsp;each&nbsp;landmark<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;is&nbsp;represented&nbsp;as&nbsp;a&nbsp;list&nbsp;of&nbsp;(x,&nbsp;y)&nbsp;coordinates.</tt></dd></dl>
+ <dl><dt><a name="-draw_text"><strong>draw_text</strong></a>(cv2, frame, offset, text, color, size=0.6)</dt><dd><tt>Draws&nbsp;text&nbsp;on&nbsp;the&nbsp;frame&nbsp;at&nbsp;a&nbsp;specific&nbsp;vertical&nbsp;offset.<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;frame&nbsp;(np.ndarray):&nbsp;The&nbsp;video&nbsp;frame&nbsp;to&nbsp;annotate.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;offset&nbsp;(int):&nbsp;Vertical&nbsp;offset&nbsp;from&nbsp;the&nbsp;top&nbsp;of&nbsp;the&nbsp;frame.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;text&nbsp;(str):&nbsp;The&nbsp;text&nbsp;to&nbsp;display.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;color&nbsp;(tuple):&nbsp;Color&nbsp;of&nbsp;the&nbsp;text&nbsp;in&nbsp;BGR&nbsp;format.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;size&nbsp;(float):&nbsp;Font&nbsp;scale&nbsp;of&nbsp;the&nbsp;text&nbsp;(default:&nbsp;0.6).</tt></dd></dl>
+</td></tr></table>
+</body></html>

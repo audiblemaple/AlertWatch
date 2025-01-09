@@ -1,0 +1,118 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module main</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong>main</strong></big></big></font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href="main.html">index</a><br><a href="file:/home/bedrock/Desktop/project/AlertWatch/Production/detector/main.py">/home/bedrock/Desktop/project/AlertWatch/Production/detector/main.py</a></font></td></tr></table>
+    <p><tt>Real-time&nbsp;Face&nbsp;Detection&nbsp;and&nbsp;Landmark&nbsp;Inference&nbsp;with&nbsp;WebSocket&nbsp;Streaming<br>
+&nbsp;<br>
+This&nbsp;script&nbsp;performs&nbsp;real-time&nbsp;face&nbsp;detection,&nbsp;landmark&nbsp;inference,&nbsp;and&nbsp;monitoring<br>
+using&nbsp;a&nbsp;camera&nbsp;feed.&nbsp;It&nbsp;also&nbsp;streams&nbsp;the&nbsp;processed&nbsp;video&nbsp;frames&nbsp;over&nbsp;a&nbsp;WebSocket&nbsp;server.<br>
+&nbsp;<br>
+Features:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;Real-time&nbsp;face&nbsp;detection&nbsp;and&nbsp;facial&nbsp;landmarks&nbsp;inference.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;Blink&nbsp;detection&nbsp;and&nbsp;drowsiness&nbsp;monitoring.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;WebSocket&nbsp;server&nbsp;for&nbsp;streaming&nbsp;video&nbsp;frames&nbsp;to&nbsp;clients.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;Modular&nbsp;design&nbsp;with&nbsp;support&nbsp;for&nbsp;Hailo&nbsp;inference&nbsp;models.<br>
+&nbsp;<br>
+Modules:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;time,&nbsp;os,&nbsp;platform:&nbsp;System&nbsp;utilities&nbsp;for&nbsp;managing&nbsp;time,&nbsp;files,&nbsp;and&nbsp;platform&nbsp;specifics.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;threading,&nbsp;asyncio:&nbsp;For&nbsp;managing&nbsp;multithreading&nbsp;and&nbsp;asynchronous&nbsp;tasks.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;collections.deque:&nbsp;For&nbsp;maintaining&nbsp;a&nbsp;rolling&nbsp;buffer&nbsp;of&nbsp;video&nbsp;frames.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;cv2,&nbsp;numpy:&nbsp;OpenCV&nbsp;and&nbsp;NumPy&nbsp;for&nbsp;image&nbsp;processing.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;base64:&nbsp;For&nbsp;encoding&nbsp;video&nbsp;frames&nbsp;as&nbsp;base64&nbsp;strings&nbsp;for&nbsp;WebSocket&nbsp;transmission.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;inference:&nbsp;Initializes&nbsp;Hailo&nbsp;inference&nbsp;models.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;util:&nbsp;Utility&nbsp;functions&nbsp;for&nbsp;preprocessing,&nbsp;blink/drowsiness&nbsp;detection,&nbsp;and&nbsp;state&nbsp;management.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;drawUtil:&nbsp;Functions&nbsp;for&nbsp;drawing&nbsp;bounding&nbsp;boxes,&nbsp;landmarks,&nbsp;and&nbsp;other&nbsp;visual&nbsp;indicators.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;prePostProcessing:&nbsp;Functions&nbsp;for&nbsp;preprocessing&nbsp;input&nbsp;and&nbsp;postprocessing&nbsp;model&nbsp;outputs.<br>
+&nbsp;<br>
+Constants:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;CLASS_NUM:&nbsp;Number&nbsp;of&nbsp;facial&nbsp;landmarks&nbsp;(136/2&nbsp;for&nbsp;x,&nbsp;y&nbsp;coordinates).<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;EAR_THRESHOLD:&nbsp;Eye&nbsp;Aspect&nbsp;Ratio&nbsp;threshold&nbsp;for&nbsp;blink&nbsp;detection.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;CONSEC_FRAMES:&nbsp;Consecutive&nbsp;frames&nbsp;below&nbsp;EAR&nbsp;threshold&nbsp;to&nbsp;count&nbsp;a&nbsp;blink.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;BUFFER_DURATION:&nbsp;Duration&nbsp;(in&nbsp;seconds)&nbsp;of&nbsp;the&nbsp;frame&nbsp;buffer.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;FRAMES_TO_SKIP:&nbsp;Number&nbsp;of&nbsp;frames&nbsp;to&nbsp;skip&nbsp;for&nbsp;face&nbsp;detection.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;FACES:&nbsp;Store&nbsp;detected&nbsp;face&nbsp;bounding&nbsp;boxes&nbsp;when&nbsp;skipping&nbsp;frames.<br>
+&nbsp;<br>
+Functions:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;<a href="#-handle_faces">handle_faces</a>(faces,&nbsp;frame,&nbsp;hailo_inference,&nbsp;face_land_output_name,&nbsp;...):&nbsp;Handles&nbsp;face&nbsp;processing,&nbsp;including&nbsp;landmark&nbsp;inference,&nbsp;blink,&nbsp;and&nbsp;drowsiness&nbsp;detection.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;<a href="#-get_faces">get_faces</a>(frame,&nbsp;hailo_inference,&nbsp;face_detection_input_shape):&nbsp;Runs&nbsp;face&nbsp;detection&nbsp;on&nbsp;a&nbsp;video&nbsp;frame&nbsp;and&nbsp;returns&nbsp;bounding&nbsp;boxes.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;<a href="#-video_processing_loop">video_processing_loop</a>(hailo_inference,&nbsp;face_detection_input_shape,&nbsp;...):&nbsp;Processes&nbsp;video&nbsp;frames,&nbsp;detects&nbsp;faces/landmarks,&nbsp;and&nbsp;manages&nbsp;display.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;<a href="#-send_frames">send_frames</a>(websocket):&nbsp;Continuously&nbsp;sends&nbsp;frames&nbsp;to&nbsp;a&nbsp;WebSocket&nbsp;client.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;<a href="#-websocket_handler">websocket_handler</a>(websocket,&nbsp;path):&nbsp;Handles&nbsp;new&nbsp;WebSocket&nbsp;connections&nbsp;and&nbsp;sends&nbsp;video&nbsp;frames.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;<a href="#-start_websocket_server">start_websocket_server</a>():&nbsp;Starts&nbsp;the&nbsp;WebSocket&nbsp;server&nbsp;on&nbsp;port&nbsp;8765.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;<a href="#-main">main</a>():&nbsp;Initializes&nbsp;the&nbsp;system,&nbsp;starts&nbsp;video&nbsp;processing,&nbsp;and&nbsp;launches&nbsp;the&nbsp;WebSocket&nbsp;server.<br>
+&nbsp;<br>
+Usage:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Run&nbsp;the&nbsp;script&nbsp;to&nbsp;start&nbsp;real-time&nbsp;face&nbsp;monitoring&nbsp;and&nbsp;WebSocket&nbsp;streaming.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Clients&nbsp;can&nbsp;connect&nbsp;to&nbsp;the&nbsp;WebSocket&nbsp;server&nbsp;to&nbsp;receive&nbsp;the&nbsp;video&nbsp;feed.<br>
+&nbsp;<br>
+Requirements:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;Python&nbsp;3.8+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;OpenCV<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;NumPy<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;Hailo&nbsp;inference&nbsp;libraries<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;asyncio,&nbsp;websockets<br>
+&nbsp;<br>
+Entry&nbsp;Point:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;The&nbsp;`<a href="#-main">main</a>()`&nbsp;function&nbsp;initializes&nbsp;the&nbsp;system&nbsp;and&nbsp;runs&nbsp;the&nbsp;video&nbsp;processing<br>
+&nbsp;&nbsp;&nbsp;&nbsp;and&nbsp;WebSocket&nbsp;server&nbsp;in&nbsp;separate&nbsp;threads.<br>
+&nbsp;<br>
+Author:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Lior&nbsp;Jigalo<br>
+&nbsp;<br>
+License:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;MIT</tt></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="asyncio.html">asyncio</a><br>
+<a href="base64.html">base64</a><br>
+</td><td width="25%" valign=top><a href="cv2.html">cv2</a><br>
+<a href="numpy.html">numpy</a><br>
+</td><td width="25%" valign=top><a href="platform.html">platform</a><br>
+<a href="threading.html">threading</a><br>
+</td><td width="25%" valign=top><a href="time.html">time</a><br>
+ <a href="inference/HailoInference_async_multimodel.html">inference</a><br>
+</td><td width="25%" valign=top><a href="drawUtil/drawController.html">drawUtil</a><br>
+   <a href="util/util.html">util</a><br>
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#eeaa77">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt><a name="-get_faces"><strong>get_faces</strong></a>(frame, hailo_inference, face_detection_input_shape) -&gt; list[int, int, int, int, float] | None</dt><dd><tt>Preprocess&nbsp;frame,&nbsp;run&nbsp;face&nbsp;detection,&nbsp;and&nbsp;return&nbsp;bounding&nbsp;boxes.</tt></dd></dl>
+ <dl><dt><a name="-handle_faces"><strong>handle_faces</strong></a>(faces, frame, hailo_inference, face_land_output_name, face_landmarks_input_shape, all_landmarks, state: util.AppState.AppState, tensors) -&gt; None</dt><dd><tt>Handle&nbsp;detected&nbsp;faces:&nbsp;run&nbsp;landmark&nbsp;inference,&nbsp;blink,&nbsp;drowsiness&nbsp;detection.</tt></dd></dl>
+ <dl><dt><a name="-main"><strong>main</strong></a>() -&gt; None</dt></dl>
+ <dl><dt>async <a name="-send_frames"><strong>send_frames</strong></a>(websocket)</dt><dd><tt>Continuously&nbsp;send&nbsp;frames&nbsp;to&nbsp;connected&nbsp;client&nbsp;over&nbsp;WebSocket.</tt></dd></dl>
+ <dl><dt>async <a name="-start_websocket_server"><strong>start_websocket_server</strong></a>() -&gt; None</dt><dd><tt>Launch&nbsp;the&nbsp;WebSocket&nbsp;server&nbsp;on&nbsp;port&nbsp;8765.</tt></dd></dl>
+ <dl><dt><a name="-video_processing_loop"><strong>video_processing_loop</strong></a>(hailo_inference, face_detection_input_shape, face_landmarks_input_shape, face_land_output_name, state: util.AppState.AppState)</dt><dd><tt>Continually&nbsp;capture&nbsp;frames,&nbsp;run&nbsp;face&nbsp;detection/landmarks,&nbsp;and&nbsp;manage&nbsp;display.</tt></dd></dl>
+ <dl><dt>async <a name="-websocket_handler"><strong>websocket_handler</strong></a>(websocket, path: str) -&gt; None</dt><dd><tt>Handle&nbsp;new&nbsp;WebSocket&nbsp;connection.</tt></dd></dl>
+</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>BUFFER_DURATION</strong> = 30<br>
+<strong>CLASS_NUM</strong> = 68<br>
+<strong>CONSEC_FRAMES</strong> = 2<br>
+<strong>EAR_THRESHOLD</strong> = 0.25<br>
+<strong>FACES</strong> = None<br>
+<strong>FRAMES_TO_SKIP</strong> = 4<br>
+<strong>__annotations__</strong> = {'BUFFER_DURATION': &lt;class 'int'&gt;, 'CLASS_NUM': &lt;class 'int'&gt;, 'CONSEC_FRAMES': &lt;class 'int'&gt;, 'EAR_THRESHOLD': &lt;class 'float'&gt;, 'FACES': int | None, 'FRAMES_TO_SKIP': &lt;class 'int'&gt;}<br>
+<strong>latest_frame</strong> = None<br>
+<strong>lock</strong> = &lt;unlocked _thread.lock object&gt;</td></tr></table>
+</body></html>

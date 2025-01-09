@@ -1,0 +1,118 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module faceController</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong>faceController</strong></big></big></font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/bedrock/Desktop/project/AlertWatch/Production/detector/util/faceController.py">/home/bedrock/Desktop/project/AlertWatch/Production/detector/util/faceController.py</a></font></td></tr></table>
+    <p><tt>Drowsiness&nbsp;Detection&nbsp;and&nbsp;Blink&nbsp;Monitoring&nbsp;Utilities<br>
+&nbsp;<br>
+This&nbsp;module&nbsp;provides&nbsp;utilities&nbsp;for&nbsp;processing&nbsp;face&nbsp;bounding&nbsp;boxes,&nbsp;running&nbsp;landmark&nbsp;inference,<br>
+detecting&nbsp;blinks,&nbsp;and&nbsp;identifying&nbsp;signs&nbsp;of&nbsp;drowsiness.&nbsp;It&nbsp;also&nbsp;includes&nbsp;functionality&nbsp;for&nbsp;sending<br>
+alerts&nbsp;over&nbsp;WebSocket&nbsp;and&nbsp;saving&nbsp;video&nbsp;when&nbsp;drowsiness&nbsp;is&nbsp;detected.<br>
+&nbsp;<br>
+Constants:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;WS_URL&nbsp;(str):&nbsp;WebSocket&nbsp;URL&nbsp;for&nbsp;sending&nbsp;alerts.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;RECONNECT_INTERVAL&nbsp;(int):&nbsp;Interval&nbsp;in&nbsp;seconds&nbsp;for&nbsp;reconnect&nbsp;attempts&nbsp;to&nbsp;the&nbsp;WebSocket&nbsp;server.<br>
+&nbsp;<br>
+Functions:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;process_bounding_box:&nbsp;Processes&nbsp;a&nbsp;bounding&nbsp;box&nbsp;to&nbsp;fit&nbsp;within&nbsp;frame&nbsp;boundaries.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;run_landmark_inference:&nbsp;Runs&nbsp;inference&nbsp;for&nbsp;facial&nbsp;landmarks&nbsp;and&nbsp;reshapes&nbsp;the&nbsp;output.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;handle_blink_detection:&nbsp;Detects&nbsp;blinks&nbsp;based&nbsp;on&nbsp;Eye&nbsp;Aspect&nbsp;Ratio&nbsp;(EAR)&nbsp;and&nbsp;updates&nbsp;state.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;handle_drowsiness_detection:&nbsp;Detects&nbsp;drowsiness&nbsp;based&nbsp;on&nbsp;EAR&nbsp;and&nbsp;triggers&nbsp;alerts&nbsp;or&nbsp;video&nbsp;saving.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;send_drowsiness_alert:&nbsp;Sends&nbsp;drowsiness&nbsp;alerts&nbsp;as&nbsp;JSON&nbsp;messages&nbsp;over&nbsp;a&nbsp;WebSocket.<br>
+&nbsp;<br>
+Dependencies:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;asyncio:&nbsp;For&nbsp;asynchronous&nbsp;WebSocket&nbsp;communication.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;datetime:&nbsp;For&nbsp;timestamping&nbsp;video&nbsp;files&nbsp;and&nbsp;alerts.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;json:&nbsp;For&nbsp;creating&nbsp;JSON&nbsp;messages.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;threading:&nbsp;For&nbsp;running&nbsp;alert&nbsp;and&nbsp;video&nbsp;saving&nbsp;tasks&nbsp;in&nbsp;separate&nbsp;threads.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;time:&nbsp;For&nbsp;measuring&nbsp;durations&nbsp;and&nbsp;handling&nbsp;debouncing.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;cv2:&nbsp;For&nbsp;OpenCV&nbsp;operations&nbsp;like&nbsp;drawing&nbsp;text&nbsp;on&nbsp;frames.<br>
+&nbsp;<br>
+Usage:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Use&nbsp;the&nbsp;functions&nbsp;to&nbsp;process&nbsp;video&nbsp;frames,&nbsp;monitor&nbsp;blinks,&nbsp;and&nbsp;handle&nbsp;drowsiness&nbsp;alerts&nbsp;in<br>
+&nbsp;&nbsp;&nbsp;&nbsp;real-time&nbsp;applications.<br>
+&nbsp;<br>
+Author:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Lior&nbsp;Jigalo<br>
+&nbsp;<br>
+License:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;MIT</tt></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="asyncio.html">asyncio</a><br>
+<a href="cv2.html">cv2</a><br>
+</td><td width="25%" valign=top><a href="datetime.html">datetime</a><br>
+<a href="json.html">json</a><br>
+</td><td width="25%" valign=top><a href="numpy.html">numpy</a><br>
+<a href="threading.html">threading</a><br>
+</td><td width="25%" valign=top><a href="time.html">time</a><br>
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#eeaa77">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt><a name="-handle_blink_detection"><strong>handle_blink_detection</strong></a>(left_eye, right_eye, state, ear_threshold, consec_frames) -&gt; float</dt><dd><tt>Detects&nbsp;blinks&nbsp;based&nbsp;on&nbsp;the&nbsp;Eye&nbsp;Aspect&nbsp;Ratio&nbsp;(EAR)&nbsp;and&nbsp;updates&nbsp;the&nbsp;application&nbsp;state.<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;left_eye&nbsp;(np.ndarray):&nbsp;Landmarks&nbsp;for&nbsp;the&nbsp;left&nbsp;eye.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;right_eye&nbsp;(np.ndarray):&nbsp;Landmarks&nbsp;for&nbsp;the&nbsp;right&nbsp;eye.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;state&nbsp;(AppState):&nbsp;The&nbsp;application&nbsp;state&nbsp;object.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;ear_threshold&nbsp;(float):&nbsp;Threshold&nbsp;for&nbsp;EAR&nbsp;to&nbsp;indicate&nbsp;eye&nbsp;closure.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;consec_frames&nbsp;(int):&nbsp;Minimum&nbsp;consecutive&nbsp;frames&nbsp;below&nbsp;threshold&nbsp;to&nbsp;count&nbsp;as&nbsp;a&nbsp;blink.<br>
+&nbsp;<br>
+Returns:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;float:&nbsp;The&nbsp;average&nbsp;EAR&nbsp;value&nbsp;for&nbsp;the&nbsp;current&nbsp;frame.</tt></dd></dl>
+ <dl><dt><a name="-handle_drowsiness_detection"><strong>handle_drowsiness_detection</strong></a>(avg_EAR, state, frame) -&gt; None</dt><dd><tt>Detects&nbsp;drowsiness&nbsp;based&nbsp;on&nbsp;the&nbsp;EAR&nbsp;and&nbsp;application&nbsp;state,&nbsp;triggers&nbsp;alerts&nbsp;or&nbsp;video&nbsp;saving.<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;avg_EAR&nbsp;(float):&nbsp;The&nbsp;average&nbsp;EAR&nbsp;value&nbsp;for&nbsp;the&nbsp;current&nbsp;frame.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;state&nbsp;(AppState):&nbsp;The&nbsp;application&nbsp;state&nbsp;object.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;frame&nbsp;(np.ndarray):&nbsp;The&nbsp;video&nbsp;frame&nbsp;for&nbsp;annotation&nbsp;and&nbsp;display.</tt></dd></dl>
+ <dl><dt><a name="-process_bounding_box"><strong>process_bounding_box</strong></a>(face, frame) -&gt; tuple[int, int, int, int, float]</dt><dd><tt>Processes&nbsp;a&nbsp;bounding&nbsp;box&nbsp;to&nbsp;ensure&nbsp;it&nbsp;fits&nbsp;within&nbsp;frame&nbsp;boundaries.<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;face&nbsp;(tuple):&nbsp;Bounding&nbsp;box&nbsp;coordinates&nbsp;and&nbsp;confidence&nbsp;score&nbsp;(x1,&nbsp;y1,&nbsp;x2,&nbsp;y2,&nbsp;score).<br>
+&nbsp;&nbsp;&nbsp;&nbsp;frame&nbsp;(np.ndarray):&nbsp;The&nbsp;video&nbsp;frame.<br>
+&nbsp;<br>
+Returns:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;tuple:&nbsp;Adjusted&nbsp;bounding&nbsp;box&nbsp;coordinates&nbsp;(x1,&nbsp;y1,&nbsp;x2,&nbsp;y2,&nbsp;score).</tt></dd></dl>
+ <dl><dt><a name="-run_landmark_inference"><strong>run_landmark_inference</strong></a>(hailo_inference, preprocessed_face, face_land_output_name, class_num) -&gt; numpy.ndarray | None</dt><dd><tt>Runs&nbsp;inference&nbsp;for&nbsp;facial&nbsp;landmarks&nbsp;using&nbsp;a&nbsp;Hailo&nbsp;inference&nbsp;object.<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;hailo_inference:&nbsp;The&nbsp;inference&nbsp;object&nbsp;for&nbsp;running&nbsp;models.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;preprocessed_face&nbsp;(np.ndarray):&nbsp;Preprocessed&nbsp;face&nbsp;ROI.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;face_land_output_name&nbsp;(str):&nbsp;Name&nbsp;of&nbsp;the&nbsp;output&nbsp;tensor&nbsp;for&nbsp;landmarks.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;class_num&nbsp;(int):&nbsp;Number&nbsp;of&nbsp;landmark&nbsp;points.<br>
+&nbsp;<br>
+Returns:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;np.ndarray&nbsp;|&nbsp;None:&nbsp;Reshaped&nbsp;landmark&nbsp;coordinates&nbsp;(class_num&nbsp;x&nbsp;2),&nbsp;or&nbsp;None&nbsp;if&nbsp;no&nbsp;output.</tt></dd></dl>
+ <dl><dt><a name="-send_drowsiness_alert"><strong>send_drowsiness_alert</strong></a>(ws_url: str, reconnect_interval: int, reason: str) -&gt; None</dt><dd><tt>Sends&nbsp;a&nbsp;drowsiness&nbsp;alert&nbsp;as&nbsp;a&nbsp;JSON&nbsp;message&nbsp;over&nbsp;a&nbsp;WebSocket&nbsp;connection.<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;ws_url&nbsp;(str):&nbsp;The&nbsp;WebSocket&nbsp;server&nbsp;URL.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;reconnect_interval&nbsp;(int):&nbsp;Interval&nbsp;in&nbsp;seconds&nbsp;for&nbsp;reconnect&nbsp;attempts.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;reason&nbsp;(str):&nbsp;Reason&nbsp;for&nbsp;the&nbsp;drowsiness&nbsp;alert.</tt></dd></dl>
+</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>RECONNECT_INTERVAL</strong> = 2<br>
+<strong>WS_URL</strong> = 'ws://192.168.0.63:5000'<br>
+<strong>__annotations__</strong> = {'RECONNECT_INTERVAL': &lt;class 'int'&gt;, 'WS_URL': &lt;class 'str'&gt;}</td></tr></table>
+</body></html>

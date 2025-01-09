@@ -1,0 +1,129 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module processingController</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong>processingController</strong></big></big></font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/bedrock/Desktop/project/AlertWatch/Production/detector/prePostProcessing/processingController.py">/home/bedrock/Desktop/project/AlertWatch/Production/detector/prePostProcessing/processingController.py</a></font></td></tr></table>
+    <p><tt>Face&nbsp;Detection&nbsp;and&nbsp;Landmark&nbsp;Processing&nbsp;Utilities<br>
+&nbsp;<br>
+This&nbsp;module&nbsp;provides&nbsp;utilities&nbsp;for&nbsp;preprocessing&nbsp;input&nbsp;images,&nbsp;adjusting&nbsp;landmarks,&nbsp;generating&nbsp;anchors,<br>
+and&nbsp;postprocessing&nbsp;outputs&nbsp;for&nbsp;face&nbsp;detection&nbsp;and&nbsp;landmark&nbsp;detection&nbsp;tasks.<br>
+&nbsp;<br>
+Features:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;Preprocess&nbsp;input&nbsp;images&nbsp;for&nbsp;face&nbsp;detection&nbsp;and&nbsp;landmark&nbsp;detection.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;Adjust&nbsp;landmark&nbsp;predictions&nbsp;to&nbsp;match&nbsp;the&nbsp;bounding&nbsp;box&nbsp;scale.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;Generate&nbsp;anchors&nbsp;for&nbsp;feature&nbsp;map-based&nbsp;face&nbsp;detection.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;Postprocess&nbsp;model&nbsp;outputs&nbsp;to&nbsp;extract&nbsp;face&nbsp;bounding&nbsp;boxes&nbsp;and&nbsp;landmarks.<br>
+&nbsp;<br>
+Constants:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;input_size&nbsp;(int):&nbsp;Input&nbsp;size&nbsp;for&nbsp;face&nbsp;detection&nbsp;(default:&nbsp;640).<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;steps&nbsp;(list):&nbsp;Step&nbsp;sizes&nbsp;for&nbsp;feature&nbsp;map&nbsp;scaling.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;min_sizes&nbsp;(list):&nbsp;Minimum&nbsp;sizes&nbsp;for&nbsp;anchor&nbsp;generation.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;fm_sizes&nbsp;(list):&nbsp;Feature&nbsp;map&nbsp;sizes&nbsp;for&nbsp;input&nbsp;size.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;PRECOMPUTED_ANCHORS&nbsp;(np.ndarray):&nbsp;Precomputed&nbsp;anchors&nbsp;for&nbsp;face&nbsp;detection.<br>
+&nbsp;<br>
+Functions:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;preprocess_face_landmarks:&nbsp;Prepares&nbsp;the&nbsp;face&nbsp;region&nbsp;of&nbsp;interest&nbsp;(ROI)&nbsp;for&nbsp;landmark&nbsp;detection.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;adjust_landmarks:&nbsp;Adjusts&nbsp;landmark&nbsp;coordinates&nbsp;based&nbsp;on&nbsp;the&nbsp;face&nbsp;bounding&nbsp;box.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;preprocess_face_detection:&nbsp;Prepares&nbsp;the&nbsp;input&nbsp;image&nbsp;for&nbsp;face&nbsp;detection,&nbsp;including&nbsp;resizing&nbsp;and&nbsp;padding.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;generate_anchors:&nbsp;Generates&nbsp;anchors&nbsp;for&nbsp;feature&nbsp;map-based&nbsp;face&nbsp;detection.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;postprocess_faces:&nbsp;Extracts&nbsp;and&nbsp;processes&nbsp;face&nbsp;bounding&nbsp;boxes&nbsp;from&nbsp;model&nbsp;outputs.<br>
+&nbsp;<br>
+Dependencies:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;OpenCV&nbsp;(cv2):&nbsp;For&nbsp;image&nbsp;processing.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;NumPy:&nbsp;For&nbsp;numerical&nbsp;computations.<br>
+&nbsp;<br>
+Author:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Lior&nbsp;Jigalo<br>
+&nbsp;<br>
+License:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;MIT</tt></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="cv2.html">cv2</a><br>
+</td><td width="25%" valign=top><a href="numpy.html">numpy</a><br>
+</td><td width="25%" valign=top></td><td width="25%" valign=top></td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#eeaa77">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt><a name="-adjust_landmarks"><strong>adjust_landmarks</strong></a>(landmarks, bbox) -&gt; numpy.ndarray</dt><dd><tt>Adjust&nbsp;landmark&nbsp;positions&nbsp;based&nbsp;on&nbsp;the&nbsp;face&nbsp;bounding&nbsp;box&nbsp;and&nbsp;model&nbsp;scale.<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;landmarks&nbsp;(np.ndarray):&nbsp;Predicted&nbsp;landmarks&nbsp;(N&nbsp;x&nbsp;2).<br>
+&nbsp;&nbsp;&nbsp;&nbsp;bbox&nbsp;(tuple):&nbsp;Bounding&nbsp;box&nbsp;(x,&nbsp;y,&nbsp;w,&nbsp;h)&nbsp;of&nbsp;the&nbsp;face.<br>
+&nbsp;<br>
+Returns:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;np.ndarray:&nbsp;Adjusted&nbsp;landmark&nbsp;coordinates&nbsp;of&nbsp;shape&nbsp;(N&nbsp;x&nbsp;2).</tt></dd></dl>
+ <dl><dt><a name="-generate_anchors"><strong>generate_anchors</strong></a>(fm_sizes, input_size, steps, min_sizes) -&gt; numpy.ndarray</dt><dd><tt>Generate&nbsp;anchors&nbsp;for&nbsp;face&nbsp;detection&nbsp;based&nbsp;on&nbsp;feature&nbsp;map&nbsp;sizes.<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;fm_sizes&nbsp;(list):&nbsp;List&nbsp;of&nbsp;feature&nbsp;map&nbsp;sizes&nbsp;[(width,&nbsp;height)].<br>
+&nbsp;&nbsp;&nbsp;&nbsp;input_size&nbsp;(int):&nbsp;Input&nbsp;image&nbsp;size.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;steps&nbsp;(list):&nbsp;Step&nbsp;sizes&nbsp;for&nbsp;each&nbsp;feature&nbsp;map&nbsp;scale.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;min_sizes&nbsp;(list):&nbsp;Minimum&nbsp;sizes&nbsp;for&nbsp;anchors&nbsp;at&nbsp;each&nbsp;scale.<br>
+&nbsp;<br>
+Returns:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;np.ndarray:&nbsp;Array&nbsp;of&nbsp;anchor&nbsp;coordinates.</tt></dd></dl>
+ <dl><dt><a name="-postprocess_faces"><strong>postprocess_faces</strong></a>(outputs, pad_w, pad_h, score_threshold=0.67, nms_threshold=0.4) -&gt; list[int, int, int, int, float] | None</dt><dd><tt>Postprocess&nbsp;model&nbsp;outputs&nbsp;to&nbsp;extract&nbsp;face&nbsp;bounding&nbsp;boxes.<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;outputs&nbsp;(dict):&nbsp;Model&nbsp;outputs&nbsp;containing&nbsp;bounding&nbsp;box&nbsp;predictions&nbsp;and&nbsp;confidence&nbsp;scores.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;pad_w&nbsp;(int):&nbsp;Horizontal&nbsp;padding&nbsp;added&nbsp;during&nbsp;preprocessing.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;pad_h&nbsp;(int):&nbsp;Vertical&nbsp;padding&nbsp;added&nbsp;during&nbsp;preprocessing.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;score_threshold&nbsp;(float):&nbsp;Minimum&nbsp;confidence&nbsp;score&nbsp;to&nbsp;consider&nbsp;a&nbsp;detection.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;nms_threshold&nbsp;(float):&nbsp;Non-Maximum&nbsp;Suppression&nbsp;(NMS)&nbsp;threshold&nbsp;for&nbsp;filtering&nbsp;overlapping&nbsp;boxes.<br>
+&nbsp;<br>
+Returns:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;list&nbsp;|&nbsp;None:&nbsp;List&nbsp;of&nbsp;bounding&nbsp;boxes&nbsp;and&nbsp;scores&nbsp;[(x1,&nbsp;y1,&nbsp;x2,&nbsp;y2,&nbsp;score)]&nbsp;or&nbsp;None&nbsp;if&nbsp;no&nbsp;detections.</tt></dd></dl>
+ <dl><dt><a name="-preprocess_face_detection"><strong>preprocess_face_detection</strong></a>(image, input_size=(640, 640)) -&gt; tuple[numpy.ndarray, float, int, int, int, int]</dt><dd><tt>Preprocess&nbsp;the&nbsp;input&nbsp;image&nbsp;for&nbsp;face&nbsp;detection&nbsp;by&nbsp;resizing&nbsp;and&nbsp;padding&nbsp;to&nbsp;maintain&nbsp;aspect&nbsp;ratio.<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;image&nbsp;(np.ndarray):&nbsp;Input&nbsp;image&nbsp;(H&nbsp;x&nbsp;W&nbsp;x&nbsp;3).<br>
+&nbsp;&nbsp;&nbsp;&nbsp;input_size&nbsp;(tuple):&nbsp;Desired&nbsp;size&nbsp;for&nbsp;the&nbsp;model&nbsp;(W,&nbsp;H).<br>
+&nbsp;<br>
+Returns:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;tuple:&nbsp;Contains:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;padded_image&nbsp;(np.ndarray):&nbsp;The&nbsp;resized&nbsp;and&nbsp;padded&nbsp;image.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;scale&nbsp;(float):&nbsp;The&nbsp;scaling&nbsp;factor&nbsp;used&nbsp;during&nbsp;resizing.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;pad_w&nbsp;(int):&nbsp;Padding&nbsp;added&nbsp;to&nbsp;the&nbsp;width.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;pad_h&nbsp;(int):&nbsp;Padding&nbsp;added&nbsp;to&nbsp;the&nbsp;height.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;orig_w&nbsp;(int):&nbsp;Original&nbsp;image&nbsp;width.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;orig_h&nbsp;(int):&nbsp;Original&nbsp;image&nbsp;height.</tt></dd></dl>
+ <dl><dt><a name="-preprocess_face_landmarks"><strong>preprocess_face_landmarks</strong></a>(frame, bbox, input_shape, gray=True)</dt><dd><tt>Preprocess&nbsp;the&nbsp;face&nbsp;ROI&nbsp;for&nbsp;landmark&nbsp;detection.<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;frame&nbsp;(np.ndarray):&nbsp;The&nbsp;original&nbsp;video&nbsp;frame&nbsp;(H&nbsp;x&nbsp;W&nbsp;x&nbsp;C).<br>
+&nbsp;&nbsp;&nbsp;&nbsp;bbox&nbsp;(tuple):&nbsp;Bounding&nbsp;box&nbsp;of&nbsp;the&nbsp;face&nbsp;(x1,&nbsp;y1,&nbsp;x2,&nbsp;y2).<br>
+&nbsp;&nbsp;&nbsp;&nbsp;input_shape&nbsp;(tuple):&nbsp;Target&nbsp;input&nbsp;shape&nbsp;for&nbsp;the&nbsp;model&nbsp;(H,&nbsp;W,&nbsp;[C]).<br>
+&nbsp;&nbsp;&nbsp;&nbsp;gray&nbsp;(bool):&nbsp;Whether&nbsp;to&nbsp;convert&nbsp;the&nbsp;face&nbsp;ROI&nbsp;to&nbsp;grayscale.<br>
+&nbsp;<br>
+Returns:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;tuple:&nbsp;(preprocessed_face,&nbsp;adjusted_bbox)&nbsp;or&nbsp;(None,&nbsp;bbox)&nbsp;if&nbsp;invalid.</tt></dd></dl>
+</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>PRECOMPUTED_ANCHORS</strong> = array([[0.0125, 0.0125, 0.1   , 0.1   ],
+       ....1   ],
+       [0.9875, 0.9875, 0.2   , 0.2   ]])<br>
+<strong>fm_sizes</strong> = [(40, 40)]<br>
+<strong>input_size</strong> = 640<br>
+<strong>min_sizes</strong> = [[64, 128]]<br>
+<strong>steps</strong> = [16]</td></tr></table>
+</body></html>

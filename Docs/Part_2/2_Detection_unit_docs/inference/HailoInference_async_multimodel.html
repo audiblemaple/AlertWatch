@@ -1,0 +1,142 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module HailoInference_async_multimodel</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong>HailoInference_async_multimodel</strong></big></big></font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/bedrock/Desktop/project/AlertWatch/Production/detector/inference/HailoInference_async_multimodel.py">/home/bedrock/Desktop/project/AlertWatch/Production/detector/inference/HailoInference_async_multimodel.py</a></font></td></tr></table>
+    <p><tt>Hailo&nbsp;Inference&nbsp;Module<br>
+&nbsp;<br>
+This&nbsp;module&nbsp;provides&nbsp;functionality&nbsp;to&nbsp;perform&nbsp;asynchronous&nbsp;inference&nbsp;using&nbsp;the&nbsp;Hailo&nbsp;platform.<br>
+It&nbsp;supports&nbsp;running&nbsp;multiple&nbsp;models&nbsp;concurrently,&nbsp;configuring&nbsp;network&nbsp;groups,&nbsp;and&nbsp;handling&nbsp;inference&nbsp;pipelines.<br>
+&nbsp;<br>
+Classes:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;<a href="#HailoInferenceAsyncMultiModel">HailoInferenceAsyncMultiModel</a>:&nbsp;Manages&nbsp;multiple&nbsp;inference&nbsp;models&nbsp;on&nbsp;a&nbsp;Hailo&nbsp;device.<br>
+&nbsp;<br>
+Functions:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;initialize_inference_models:&nbsp;Initializes&nbsp;face&nbsp;detection&nbsp;and&nbsp;face&nbsp;landmarks&nbsp;models&nbsp;for&nbsp;inference.<br>
+&nbsp;<br>
+Dependencies:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;hailo_platform:&nbsp;For&nbsp;Hailo&nbsp;device&nbsp;and&nbsp;model&nbsp;configuration.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;numpy:&nbsp;For&nbsp;numerical&nbsp;operations&nbsp;and&nbsp;input&nbsp;data&nbsp;manipulation.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;subprocess:&nbsp;For&nbsp;interacting&nbsp;with&nbsp;external&nbsp;commands&nbsp;(e.g.,&nbsp;`hailortcli`).<br>
+&nbsp;<br>
+Usage:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Use&nbsp;the&nbsp;`initialize_inference_models`&nbsp;function&nbsp;to&nbsp;set&nbsp;up&nbsp;models&nbsp;for&nbsp;face&nbsp;detection&nbsp;and&nbsp;landmarks&nbsp;inference.<br>
+&nbsp;<br>
+Author:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Lior&nbsp;Jigalo<br>
+&nbsp;<br>
+License:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;MIT</tt></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="numpy.html">numpy</a><br>
+</td><td width="25%" valign=top><a href="subprocess.html">subprocess</a><br>
+</td><td width="25%" valign=top></td><td width="25%" valign=top></td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="builtins.html#object">builtins.object</a>
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="HailoInference_async_multimodel.html#HailoInferenceAsyncMultiModel">HailoInferenceAsyncMultiModel</a>
+</font></dt></dl>
+</dd>
+</dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="HailoInferenceAsyncMultiModel">class <strong>HailoInferenceAsyncMultiModel</strong></a>(<a href="builtins.html#object">builtins.object</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt><a href="#HailoInferenceAsyncMultiModel">HailoInferenceAsyncMultiModel</a>(model_paths,&nbsp;input_types=('UINT8',&nbsp;'UINT8'),&nbsp;output_types=('UINT8',&nbsp;'UINT8'))<br>
+&nbsp;<br>
+Manages&nbsp;multiple&nbsp;inference&nbsp;models&nbsp;on&nbsp;a&nbsp;Hailo&nbsp;device.<br>
+&nbsp;<br>
+This&nbsp;class&nbsp;handles&nbsp;the&nbsp;configuration&nbsp;of&nbsp;two&nbsp;models,&nbsp;their&nbsp;network&nbsp;groups,&nbsp;input/output&nbsp;stream&nbsp;parameters,<br>
+and&nbsp;provides&nbsp;methods&nbsp;to&nbsp;run&nbsp;inference&nbsp;on&nbsp;the&nbsp;models.<br>
+&nbsp;<br>
+Attributes:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;model_paths&nbsp;(tuple):&nbsp;Paths&nbsp;to&nbsp;the&nbsp;HEF&nbsp;files&nbsp;for&nbsp;the&nbsp;two&nbsp;models.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;models&nbsp;(dict):&nbsp;Contains&nbsp;model-specific&nbsp;configuration&nbsp;and&nbsp;parameters.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;target&nbsp;(VDevice):&nbsp;Represents&nbsp;the&nbsp;Hailo&nbsp;VDevice.<br>
+&nbsp;<br>
+Methods:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;__init__:&nbsp;Initializes&nbsp;the&nbsp;inference&nbsp;<a href="builtins.html#object">object</a>&nbsp;with&nbsp;two&nbsp;models.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;_get_hailo_architecture:&nbsp;Detects&nbsp;the&nbsp;Hailo&nbsp;device&nbsp;architecture.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;_load_model:&nbsp;Configures&nbsp;a&nbsp;model&nbsp;and&nbsp;sets&nbsp;up&nbsp;its&nbsp;network&nbsp;group.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;get_input_shape:&nbsp;Returns&nbsp;the&nbsp;shape&nbsp;of&nbsp;the&nbsp;input&nbsp;layer&nbsp;for&nbsp;a&nbsp;specific&nbsp;model.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;run:&nbsp;Executes&nbsp;inference&nbsp;on&nbsp;the&nbsp;specified&nbsp;model.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;release_device:&nbsp;Releases&nbsp;the&nbsp;Hailo&nbsp;VDevice.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="HailoInferenceAsyncMultiModel-__init__"><strong>__init__</strong></a>(self, model_paths, input_types=('UINT8', 'UINT8'), output_types=('UINT8', 'UINT8'))</dt><dd><tt>Initialize&nbsp;the&nbsp;Hailo&nbsp;inference&nbsp;<a href="builtins.html#object">object</a>&nbsp;with&nbsp;two&nbsp;models.<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;model_paths&nbsp;(tuple):&nbsp;Paths&nbsp;to&nbsp;the&nbsp;two&nbsp;HEF&nbsp;files.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;input_types&nbsp;(tuple):&nbsp;Input&nbsp;types&nbsp;for&nbsp;the&nbsp;two&nbsp;models&nbsp;(default:&nbsp;UINT8).<br>
+&nbsp;&nbsp;&nbsp;&nbsp;output_types&nbsp;(tuple):&nbsp;Output&nbsp;types&nbsp;for&nbsp;the&nbsp;two&nbsp;models&nbsp;(default:&nbsp;UINT8).</tt></dd></dl>
+
+<dl><dt><a name="HailoInferenceAsyncMultiModel-get_input_shape"><strong>get_input_shape</strong></a>(self, model_id=1)</dt><dd><tt>Return&nbsp;the&nbsp;shape&nbsp;of&nbsp;the&nbsp;input&nbsp;layer&nbsp;for&nbsp;a&nbsp;specific&nbsp;model.<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;model_id&nbsp;(int):&nbsp;The&nbsp;ID&nbsp;of&nbsp;the&nbsp;model&nbsp;(1&nbsp;or&nbsp;2).<br>
+&nbsp;<br>
+Returns:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;tuple:&nbsp;Shape&nbsp;of&nbsp;the&nbsp;input&nbsp;layer.</tt></dd></dl>
+
+<dl><dt><a name="HailoInferenceAsyncMultiModel-release_device"><strong>release_device</strong></a>(self)</dt><dd><tt>Release&nbsp;the&nbsp;VDevice.</tt></dd></dl>
+
+<dl><dt><a name="HailoInferenceAsyncMultiModel-run"><strong>run</strong></a>(self, model_id, input_data)</dt><dd><tt>Run&nbsp;inference&nbsp;on&nbsp;the&nbsp;specified&nbsp;model.<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;model_id&nbsp;(int):&nbsp;The&nbsp;ID&nbsp;of&nbsp;the&nbsp;model&nbsp;(1&nbsp;or&nbsp;2).<br>
+&nbsp;&nbsp;&nbsp;&nbsp;input_data&nbsp;(np.ndarray):&nbsp;The&nbsp;input&nbsp;data&nbsp;for&nbsp;inference.<br>
+&nbsp;<br>
+Returns:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;dict:&nbsp;Output&nbsp;data&nbsp;from&nbsp;the&nbsp;inference.</tt></dd></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#eeaa77">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt><a name="-initialize_inference_models"><strong>initialize_inference_models</strong></a>(face_det_path, face_landmark_path)</dt><dd><tt>Initializes&nbsp;the&nbsp;Hailo&nbsp;inference&nbsp;models&nbsp;for&nbsp;face&nbsp;detection&nbsp;and&nbsp;face&nbsp;landmarks.<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;face_det_path&nbsp;(str):&nbsp;Path&nbsp;to&nbsp;the&nbsp;face&nbsp;detection&nbsp;HEF&nbsp;file.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;face_landmark_path&nbsp;(str):&nbsp;Path&nbsp;to&nbsp;the&nbsp;face&nbsp;landmarks&nbsp;HEF&nbsp;file.<br>
+&nbsp;<br>
+Returns:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;tuple:&nbsp;Contains&nbsp;the&nbsp;following:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;hailo_inference&nbsp;(<a href="#HailoInferenceAsyncMultiModel">HailoInferenceAsyncMultiModel</a>):&nbsp;Initialized&nbsp;inference&nbsp;<a href="builtins.html#object">object</a>.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;face_detection_input_shape&nbsp;(tuple):&nbsp;Input&nbsp;shape&nbsp;for&nbsp;the&nbsp;face&nbsp;detection&nbsp;model.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;face_landmarks_input_shape&nbsp;(tuple):&nbsp;Input&nbsp;shape&nbsp;for&nbsp;the&nbsp;face&nbsp;landmarks&nbsp;model.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;face_land_output_name&nbsp;(str):&nbsp;Name&nbsp;of&nbsp;the&nbsp;output&nbsp;stream&nbsp;for&nbsp;the&nbsp;landmarks&nbsp;model.</tt></dd></dl>
+</td></tr></table>
+</body></html>
