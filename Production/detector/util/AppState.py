@@ -1,3 +1,32 @@
+"""
+Application State Management for Drowsiness Detection
+
+This module defines the `AppState` class, which manages the application state
+for blink detection, drowsiness analysis, and related metrics. It includes methods
+to compute blink rates, evaluate drowsiness, and maintain a buffer of EAR (Eye Aspect Ratio) measurements.
+
+Constants:
+    - EAR_THRESHOLD (float): Threshold below which the EAR indicates eye closure.
+
+Classes:
+    - AppState: Manages application state for blink detection and drowsiness monitoring.
+
+Dependencies:
+    - dataclasses: For defining the `AppState` class with default values and field types.
+    - collections.deque: For maintaining rolling buffers of EAR measurements and timestamps.
+    - threading: For managing locks to synchronize alerts and video processing.
+    - time: For time-based computations such as timestamps and durations.
+
+Usage:
+    Create an `AppState` instance and use its methods to track drowsiness-related metrics.
+
+Author:
+    Lior Jigalo
+
+License:
+    MIT
+"""
+
 from dataclasses import dataclass, field
 from collections import deque
 import threading
@@ -7,6 +36,40 @@ EAR_THRESHOLD = 0.25
 
 @dataclass
 class AppState:
+    """
+     Manages the application state for drowsiness detection and blink analysis.
+
+     Attributes:
+         blink_counter (int): Count of consecutive EAR frames below the threshold.
+         total_blinks (int): Total number of blinks detected.
+         EAR_consec_frames (int): Consecutive frames with EAR below the threshold.
+         frame_buffer (deque): Buffer for storing recent video frames.
+         buffer_size (int): Maximum size of the frame buffer.
+         fps (float): Current frames per second.
+         blink_durations (list): List of durations for individual blinks.
+         is_blinking (bool): Indicates if a blink is currently happening.
+         current_blink_start (float): Timestamp for when the current blink started.
+
+         analysis_window (int): Time window (in seconds) for computing blink rates and EAR averages.
+         blink_rate_threshold (float): Threshold for high blink rate (blinks per minute).
+         prolonged_EAR_duration_threshold (float): Duration threshold for prolonged low EAR.
+
+         blink_timestamps (deque): Timestamps of recent blinks for rate computation.
+
+         last_alert_time (float): Timestamp for the last alert.
+         debounce_time_alert (float): Minimum time between consecutive alerts.
+         last_video_time (float): Timestamp for the last video notification.
+         debounce_time_video (float): Minimum time between video notifications.
+         alert_lock (threading.Lock): Lock to synchronize alert generation.
+         video_lock (threading.Lock): Lock to synchronize video processing.
+
+         ear_measurements (deque): Rolling buffer of EAR measurements and timestamps.
+         ear_sum (float): Running sum of EAR measurements for fast average computation.
+
+         last_ear_reset_time (float): Timestamp for the last EAR measurement reset.
+         ear_reset_cooldown (float): Cooldown duration for resetting EAR measurements.
+         avg_ear_threshold (float): Threshold for average EAR indicating drowsiness.
+     """
     blink_counter: int = 0
     total_blinks: int = 0
     EAR_consec_frames: int = 0
@@ -138,6 +201,11 @@ class AppState:
             reason = "low_average_ear"
 
         return drowsy, reason
+
+
+
+
+
 
 ''' working for production but unoptimized '''
 # @dataclass

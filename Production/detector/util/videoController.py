@@ -1,11 +1,49 @@
-import os
+"""
+Video Saving Utilities for Blink Detection and Drowsiness Monitoring
+
+This module provides functions for saving video frames to a file, ensuring directory existence,
+and handling video saves.
+
+Functions:
+    - save_video_sync: Saves a video synchronously from a buffer of frames.
+    - save_video: Asynchronously saves a video using an executor.
+
+Dependencies:
+    - cv2: For OpenCV video handling.
+    - asyncio: For asynchronous tasks.
+
+Usage:
+    Use these functions to handle video saving during drowsiness detection in real-time applications.
+
+Author:
+    Lior Jigalo
+
+License:
+    MIT
+"""
+
 import cv2
-import time
 import asyncio
-from .AppState import AppState
 
 # Save video function (synchronous version)
-def save_video_sync(buffer, fps, output_path='output_blink_detected.avi'):
+def save_video_sync(buffer, fps, output_path='output_blink_detected.avi') -> None:
+    """
+    Saves video frames from a buffer synchronously to a file.
+
+    Args:
+        buffer (deque): A buffer of video frames (each frame is a NumPy array).
+        fps (float): Frames per second for the saved video.
+        output_path (str): Path to save the video file (default: 'output_blink_detected.avi').
+
+    Returns:
+        None
+
+    Side Effects:
+        - Creates a video file at the specified output path.
+
+    Example:
+        >>> save_video_sync(buffer, 30, "output.avi")
+    """
     print(f"Attempting to save video to {output_path} with {len(buffer)} frames at {fps} FPS")
     if not buffer:
         print("No frames to save.")
@@ -28,46 +66,20 @@ def save_video_sync(buffer, fps, output_path='output_blink_detected.avi'):
 
 
 # Asynchronous save_video using executor
-async def save_video(buffer, fps, output_path='output_blink_detected.avi'):
-    loop = asyncio.get_event_loop()
-    await loop.run_in_executor(None, save_video_sync, buffer, fps, output_path)
-
-
-# Utility function to ensure directory exists
-def ensure_directory_exists(directory: str):
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-        print(f"Created directory: {directory}")
-
-
-# Delayed video save coroutine
-async def delayed_save_video(state: AppState, output_path: str, delay: float = 5.0):
+async def save_video(buffer, fps, output_path='output_blink_detected.avi') -> None:
     """
-    Waits for a specified delay and saves the video if drowsiness is still detected.
+    Saves video frames from a buffer asynchronously to a file.
 
     Args:
-        state (AppState): The application state.
-        output_path (str): The path where the video will be saved.
-        delay (float): Delay in seconds before saving the video.
-    """
-    print(f"Scheduling video save in {delay} seconds...")
-    await asyncio.sleep(delay)  # Wait for the specified delay
+        buffer (deque): A buffer of video frames (each frame is a NumPy array).
+        fps (float): Frames per second for the saved video.
+        output_path (str): Path to save the video file (default: 'output_blink_detected.avi').
 
-    # Acquire video lock to ensure thread safety
-    with state.video_lock:
-        # Check if drowsiness is still active
-        drowsy, _ = state.is_drowsy(state.current_EAR, state.current_blink_start if state.is_blinking else 0)
-        if drowsy:
-            print("Drowsiness confirmed after delay. Saving video...")
-            await save_video(state.frame_buffer, state.fps, output_path=output_path)
-            # Clear the buffer and reset blink counter
-            state.frame_buffer.clear()
-            state.blink_counter = 0
-            print(f"Blinks detected: {state.total_blinks}. Buffer cleared after saving video.")
-            # Update the last_video_time
-            state.last_video_time = time.time()
-        else:
-            print("Drowsiness no longer detected after delay. Video save aborted.")
-        # Reset the pending flag
-        state.video_save_pending = False
-        state.video_save_task = None
+    Returns:
+        None
+
+    Side Effects:
+        - Creates a video file at the specified output path asynchronously.
+    """
+    loop = asyncio.get_event_loop()
+    await loop.run_in_executor(None, save_video_sync, buffer, fps, output_path)

@@ -1,9 +1,70 @@
 #!/usr/bin/env python3
 
+"""
+Real-time Face Detection and Landmark Inference with WebSocket Streaming
+
+This script performs real-time face detection, landmark inference, and monitoring
+using a camera feed. It also streams the processed video frames over a WebSocket server.
+
+Features:
+    - Real-time face detection and facial landmarks inference.
+    - Blink detection and drowsiness monitoring.
+    - WebSocket server for streaming video frames to clients.
+    - Modular design with support for Hailo inference models.
+
+Modules:
+    - time, os, platform: System utilities for managing time, files, and platform specifics.
+    - threading, asyncio: For managing multithreading and asynchronous tasks.
+    - collections.deque: For maintaining a rolling buffer of video frames.
+    - cv2, numpy: OpenCV and NumPy for image processing.
+    - base64: For encoding video frames as base64 strings for WebSocket transmission.
+    - inference: Initializes Hailo inference models.
+    - util: Utility functions for preprocessing, blink/drowsiness detection, and state management.
+    - drawUtil: Functions for drawing bounding boxes, landmarks, and other visual indicators.
+    - prePostProcessing: Functions for preprocessing input and postprocessing model outputs.
+
+Constants:
+    - CLASS_NUM: Number of facial landmarks (136/2 for x, y coordinates).
+    - EAR_THRESHOLD: Eye Aspect Ratio threshold for blink detection.
+    - CONSEC_FRAMES: Consecutive frames below EAR threshold to count a blink.
+    - BUFFER_DURATION: Duration (in seconds) of the frame buffer.
+    - FRAMES_TO_SKIP: Number of frames to skip for face detection.
+    - FACES: Store detected face bounding boxes when skipping frames.
+
+Functions:
+    - handle_faces(faces, frame, hailo_inference, face_land_output_name, ...): Handles face processing, including landmark inference, blink, and drowsiness detection.
+    - get_faces(frame, hailo_inference, face_detection_input_shape): Runs face detection on a video frame and returns bounding boxes.
+    - video_processing_loop(hailo_inference, face_detection_input_shape, ...): Processes video frames, detects faces/landmarks, and manages display.
+    - send_frames(websocket): Continuously sends frames to a WebSocket client.
+    - websocket_handler(websocket, path): Handles new WebSocket connections and sends video frames.
+    - start_websocket_server(): Starts the WebSocket server on port 8765.
+    - main(): Initializes the system, starts video processing, and launches the WebSocket server.
+
+Usage:
+    Run the script to start real-time face monitoring and WebSocket streaming.
+    Clients can connect to the WebSocket server to receive the video feed.
+
+Requirements:
+    - Python 3.8+
+    - OpenCV
+    - NumPy
+    - Hailo inference libraries
+    - asyncio, websockets
+
+Entry Point:
+    The `main()` function initializes the system and runs the video processing
+    and WebSocket server in separate threads.
+
+Author:
+    Lior Jigalo
+
+License:
+    MIT
+"""
+
 import time
 import cv2
 import numpy as np
-import os
 import threading
 from collections import deque
 import base64
@@ -12,10 +73,9 @@ from websockets.server import serve
 import platform
 
 from inference import initialize_inference_models
-# from logger   import initialize_logging
 from util     import (
     init_cv_cap, handle_blink_detection, handle_drowsiness_detection,
-    run_landmark_inference, AppState
+    run_landmark_inference, AppState, ensure_directory_exists
 )
 from drawUtil   import (
     draw_bounding_box, display_fps, draw_landmarks, display_blink_info
@@ -25,31 +85,41 @@ from prePostProcessing import (
     preprocess_face_landmarks, adjust_landmarks
 )
 
-''' Constants '''
+''' Number of facial landmarks we have '''
 CLASS_NUM: int = 136 >> 1
 
 ''' Blink Detection Constants '''
 EAR_THRESHOLD: float = 0.25
-CONSEC_FRAMES: int = 2  # Frames below threshold for a blink
+CONSEC_FRAMES: int = 2
 
-''' Buffer Configuration '''
+''' How much of the video time to save in the buffer '''
 BUFFER_DURATION: int = 30  # seconds
 
-''' Frames to skip when detecting faces '''
+''' Frames to skip for face detection '''
 FRAMES_TO_SKIP: int = 4
 
 ''' The face to store when skipping frames '''
 FACES: int | None = None
 
-latest_frame = None  # We'll store the latest frame here so the WS server can access it
+''' Latest frame is used to send it over websocket'''
+latest_frame = None
+''' Lock is used when we send the frames, there are frame drops when sending is locked but that is ok since its used for visualizing only '''
 lock = threading.Lock()
 
-def ensure_directory_exists(directory: str) -> None:
-    """Create directory if it doesn't exist."""
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-        print(f"Created directory: {directory}")
+"""
+Handles face processing, including running landmark inference, blink detection,
+and drowsiness monitoring.
 
+Args:
+    faces (list): List of detected face bounding boxes.
+    frame (ndarray): The current video frame.
+    hailo_inference: The inference engine for running models.
+    face_land_output_name (str): Output name for face landmarks model.
+    face_landmarks_input_shape (tuple): Shape of the face landmarks model input.
+    all_landmarks (list): List to store all detected landmarks.
+    state (AppState): Application state for tracking blink and drowsiness info.
+    tensors (list): List to store face-related data for debugging or analysis.
+"""
 def handle_faces(
     faces, frame, hailo_inference, face_land_output_name,
     face_landmarks_input_shape, all_landmarks, state: AppState, tensors
@@ -98,7 +168,7 @@ def handle_faces(
     except ValueError:
         return
     except Exception as e:
-        # Log or handle unexpected exceptions
+        # Handle unexpected exceptions
         print(f"Error in landmark processing: {e}")
         return
 
@@ -108,6 +178,17 @@ def handle_faces(
         'score': float(score)
     })
 
+"""
+Detects faces in a video frame.
+
+Args:
+    frame (ndarray): The current video frame.
+    hailo_inference: The inference engine for running models.
+    face_detection_input_shape (tuple): Shape of the face detection model input.
+
+Returns:
+    list | None: List of face bounding boxes with scores, or None if no faces detected.
+"""
 def get_faces(frame, hailo_inference, face_detection_input_shape) -> list[(int, int, int, int, float)] | None:
     """Preprocess frame, run face detection, and return bounding boxes."""
     preprocessed_frame, scale, pad_w, pad_h, img_w, img_h = preprocess_face_detection(
@@ -126,6 +207,17 @@ def get_faces(frame, hailo_inference, face_detection_input_shape) -> list[(int, 
     raw_faces = hailo_inference.run(model_id=1, input_data=preprocessed_frame)
     return postprocess_faces(raw_faces, pad_w, pad_h)
 
+"""
+Continuously processes video frames, runs face detection and landmark inference,
+and manages the display and state updates.
+
+Args:
+    hailo_inference: The inference engine for running models.
+    face_detection_input_shape (tuple): Shape of the face detection model input.
+    face_landmarks_input_shape (tuple): Shape of the face landmarks model input.
+    face_land_output_name (str): Output name for face landmarks model.
+    state (AppState): Application state for tracking application metrics.
+"""
 def video_processing_loop(
     hailo_inference, face_detection_input_shape, face_landmarks_input_shape,
     face_land_output_name, state: AppState
@@ -151,8 +243,7 @@ def video_processing_loop(
 
         total_frames += 1
 
-        # Append to buffer if you truly need historical frames
-        # Minimizing copies can save CPU overhead
+        # Append to buffer for the video saving
         state.frame_buffer.append(frame)
 
         # Calculate instantaneous FPS
@@ -167,7 +258,7 @@ def video_processing_loop(
         # Average FPS
         avg_fps = total_frames / total_time if total_time > 0 else 0.0
 
-        # Face detection every FRAMES_TO_SKIP frames
+        # Run face detection every FRAMES_TO_SKIP frames
         if total_frames % FRAMES_TO_SKIP == 0:
             face = get_faces(frame, hailo_inference, face_detection_input_shape)
             if face is not None:
@@ -175,7 +266,7 @@ def video_processing_loop(
         else:
             face = face_buff
 
-        # If no face detected, just show the frame
+        # If no face detected, just show the frame or do nothing
         if not face:
             with lock:
                 latest_frame = frame
@@ -203,6 +294,7 @@ def video_processing_loop(
             frame, state.blink_counter, state.total_blinks, state.blink_durations
         )
 
+        # Show the frame or do nothing
         if platform.node() != 'hailo15':
             cv2.imshow('Webcam Face Landmarks', frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -216,6 +308,13 @@ def video_processing_loop(
     cap.release()
     cv2.destroyAllWindows()
 
+
+"""
+Sends the latest processed video frames over a WebSocket connection.
+
+Args:
+    websocket (WebSocketServerProtocol): WebSocket connection object.
+"""
 async def send_frames(websocket):
     """Continuously send frames to connected client over WebSocket."""
     while True:
@@ -235,7 +334,15 @@ async def send_frames(websocket):
         # Slight throttle to avoid saturating CPU
         await asyncio.sleep(0.03)  # ~ 30 FPS
 
-async def websocket_handler(websocket, path):
+
+"""
+Handles incoming WebSocket connections and streams frames to the client.
+
+Args:
+    websocket (WebSocketServerProtocol): WebSocket connection object.
+    path (str): The path of the WebSocket request.
+"""
+async def websocket_handler(websocket, path: str) -> None:
     """Handle new WebSocket connection."""
     print("New client connected")
     try:
@@ -243,15 +350,21 @@ async def websocket_handler(websocket, path):
     except Exception as e:
         print(f"Client disconnected: {e}")
 
-async def start_websocket_server():
+"""
+Starts the WebSocket server on port 8765 to stream video frames to clients.
+"""
+async def start_websocket_server() -> None:
     """Launch the WebSocket server on port 8765."""
     async with serve(websocket_handler, "0.0.0.0", 8765):
         print("WebSocket server started on ws://0.0.0.0:8765")
         await asyncio.Future()  # run forever
 
-def main():
-    # initialize_logging()
 
+"""
+Initializes the system, starts video processing in a separate thread,
+and launches the WebSocket server.
+"""
+def main() -> None:
     face_det = f"../models/hailo{'15H' if platform.node() == 'hailo15' else '8'}/scrfd_10g.hef"
     face_landmarks = f"../models/hailo{'15H' if platform.node() == 'hailo15' else '8'}/face-landmarks-detection.hef"
 

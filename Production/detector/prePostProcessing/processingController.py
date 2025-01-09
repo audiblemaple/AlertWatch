@@ -1,15 +1,53 @@
+"""
+Face Detection and Landmark Processing Utilities
+
+This module provides utilities for preprocessing input images, adjusting landmarks, generating anchors,
+and postprocessing outputs for face detection and landmark detection tasks.
+
+Features:
+    - Preprocess input images for face detection and landmark detection.
+    - Adjust landmark predictions to match the bounding box scale.
+    - Generate anchors for feature map-based face detection.
+    - Postprocess model outputs to extract face bounding boxes and landmarks.
+
+Constants:
+    - input_size (int): Input size for face detection (default: 640).
+    - steps (list): Step sizes for feature map scaling.
+    - min_sizes (list): Minimum sizes for anchor generation.
+    - fm_sizes (list): Feature map sizes for input size.
+    - PRECOMPUTED_ANCHORS (np.ndarray): Precomputed anchors for face detection.
+
+Functions:
+    - preprocess_face_landmarks: Prepares the face region of interest (ROI) for landmark detection.
+    - adjust_landmarks: Adjusts landmark coordinates based on the face bounding box.
+    - preprocess_face_detection: Prepares the input image for face detection, including resizing and padding.
+    - generate_anchors: Generates anchors for feature map-based face detection.
+    - postprocess_faces: Extracts and processes face bounding boxes from model outputs.
+
+Dependencies:
+    - OpenCV (cv2): For image processing.
+    - NumPy: For numerical computations.
+
+Author:
+    Lior Jigalo
+
+License:
+    MIT
+"""
+
 import cv2
 import numpy as np
+from triton.language import dtype
+
 
 def preprocess_face_landmarks(frame, bbox, input_shape, gray=True):
     """
-    Preprocesses the face ROI for landmark detection.
-    Optimized for fewer copies, fewer branches, and faster runtime.
+    Preprocess the face ROI for landmark detection.
 
     Args:
         frame (np.ndarray): The original video frame (H x W x C).
         bbox (tuple): Bounding box of the face (x1, y1, x2, y2).
-        input_shape (tuple): The target input shape for the model (H, W, [C]).
+        input_shape (tuple): Target input shape for the model (H, W, [C]).
         gray (bool): Whether to convert the face ROI to grayscale.
 
     Returns:
@@ -112,43 +150,36 @@ def preprocess_face_landmarks(frame, bbox, input_shape, gray=True):
 
     return preprocessed_face, bbox
 
-
-def adjust_landmarks(landmarks, bbox):
+def adjust_landmarks(landmarks, bbox) -> np.ndarray:
     """
-    Adjusts landmark positions based on the face bounding box
-    and the model's output scale.
+    Adjust landmark positions based on the face bounding box and model scale.
 
     Args:
         landmarks (np.ndarray): Predicted landmarks (N x 2).
-        bbox (tuple): (x, y, w, h) bounding box for the face.
+        bbox (tuple): Bounding box (x, y, w, h) of the face.
 
     Returns:
-        np.ndarray: Adjusted landmarks of shape (N x 2).
+        np.ndarray: Adjusted landmark coordinates of shape (N x 2).
     """
     x, y, w, h = bbox
-    # In-place operations to reduce overhead
-    # landmarks += 0.5
-    # landmarks[:, 0] *= w
-    # landmarks[:, 1] *= h
-    # landmarks[:, 0] += x
-    # landmarks[:, 1] += y
-    # return landmarks
-
-    # Or do a single expression:
     return (landmarks + 0.5) * np.array([[w, h]]) + np.array([[x, y]])
 
-
-def preprocess_face_detection(image, input_size=(640, 640)):
+def preprocess_face_detection(image, input_size=(640, 640)) -> tuple[np.ndarray, float, int, int, int, int]:
     """
-    Preprocess the image for face detection by resizing+padding
-    to maintain aspect ratio. Optimized for fewer copies.
+    Preprocess the input image for face detection by resizing and padding to maintain aspect ratio.
 
     Args:
         image (np.ndarray): Input image (H x W x 3).
-        input_size (tuple): Desired size (W, H).
+        input_size (tuple): Desired size for the model (W, H).
 
     Returns:
-        padded_image (np.ndarray), scale (float), pad_w (int), pad_h (int), orig_w (int), orig_h (int)
+        tuple: Contains:
+            - padded_image (np.ndarray): The resized and padded image.
+            - scale (float): The scaling factor used during resizing.
+            - pad_w (int): Padding added to the width.
+            - pad_h (int): Padding added to the height.
+            - orig_w (int): Original image width.
+            - orig_h (int): Original image height.
     """
     img_h, img_w = image.shape[:2]
     input_w, input_h = input_size
@@ -174,9 +205,18 @@ def preprocess_face_detection(image, input_size=(640, 640)):
     return padded_image, scale, pad_w, pad_h, img_w, img_h
 
 
-def generate_anchors(fm_sizes, input_size, steps, min_sizes):
+def generate_anchors(fm_sizes, input_size, steps, min_sizes) -> np.ndarray:
     """
-    Generate anchors for face detection, based on feature map sizes.
+    Generate anchors for face detection based on feature map sizes.
+
+    Args:
+        fm_sizes (list): List of feature map sizes [(width, height)].
+        input_size (int): Input image size.
+        steps (list): Step sizes for each feature map scale.
+        min_sizes (list): Minimum sizes for anchors at each scale.
+
+    Returns:
+        np.ndarray: Array of anchor coordinates.
     """
     anchors = []
     for idx, fm_size in enumerate(fm_sizes):
@@ -195,13 +235,24 @@ def generate_anchors(fm_sizes, input_size, steps, min_sizes):
 
 def postprocess_faces(outputs, pad_w, pad_h, score_threshold=0.67, nms_threshold=0.4) -> list[(int, int, int, int, float)] | None:
     """
-    Postprocess the model outputs to extract face bounding boxes
-    from a single scale (e.g., 40x40). Returns one face with the highest confidence.
+    Postprocess model outputs to extract face bounding boxes.
+
+    Args:
+        outputs (dict): Model outputs containing bounding box predictions and confidence scores.
+        pad_w (int): Horizontal padding added during preprocessing.
+        pad_h (int): Vertical padding added during preprocessing.
+        score_threshold (float): Minimum confidence score to consider a detection.
+        nms_threshold (float): Non-Maximum Suppression (NMS) threshold for filtering overlapping boxes.
+
+    Returns:
+        list | None: List of bounding boxes and scores [(x1, y1, x2, y2, score)] or None if no detections.
     """
     def sigmoid(x):
         return 1.0 / (1.0 + np.exp(-x))
 
-    def decode_bboxes(bbox_pred, anchors, variances=[0.000001, 0.005]):
+    def decode_bboxes(bbox_pred, anchors, variances=None) -> np.ndarray[any, dtype]:
+        if variances is None:
+            variances = [0.000001, 0.005]
         boxes = np.zeros_like(bbox_pred)
         # Center
         boxes[:, 0] = anchors[:, 0] + bbox_pred[:, 0] * variances[0] * anchors[:, 2]  # cx
@@ -241,7 +292,7 @@ def postprocess_faces(outputs, pad_w, pad_h, score_threshold=0.67, nms_threshold
     # Decode
     boxes = decode_bboxes(bbox_pred, anchors)
 
-    # Scale back to input_size coords
+    # Scale back to input_size coordinates
     boxes[:, 0] *= input_size
     boxes[:, 1] *= input_size
     boxes[:, 2] *= input_size
@@ -281,20 +332,6 @@ min_sizes = [[64, 128]]      # Anchors for medium scale
 fm_sizes = [(40, 40)]        # Precomputed feature map size for 640 input
 PRECOMPUTED_ANCHORS = generate_anchors(fm_sizes, input_size, steps, min_sizes)
 # -------------------------------------------------------------------------------------
-
-def adjust_landmarks(landmarks, bbox):
-    """
-    Adjusts landmark positions based on the face bounding box.
-
-    Args:
-        landmarks (np.ndarray): Predicted landmarks (N x 2).
-        bbox (tuple): (x, y, w, h).
-
-    Returns:
-        np.ndarray: Adjusted landmarks (N x 2).
-    """
-    x, y, w, h = bbox
-    return (landmarks + 0.5) * np.array([[w, h]]) + np.array([[x, y]])
 
 
 
