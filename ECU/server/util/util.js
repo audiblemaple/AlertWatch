@@ -1,11 +1,28 @@
+/**
+ * @file utility.js
+ * @description Utility functions for console logging, file management, system data retrieval, and random number generation.
+ * @author Lior Jigalo
+ * @license MIT
+ */
 const {DEBUG} = process.env;
 const fs = require('fs')
 const { execSync } = require('child_process');
+
+/**
+ * Logs a message to the console if debugging is enabled.
+ * @param {string} message - The message to log.
+ */
 function printToConsole(message){
     if (DEBUG === "1")
         console.log(message);
 }
 
+/**
+ * Deletes a file at the specified path.
+ * @async
+ * @param {string} path - The path of the file to delete.
+ * @returns {Promise<void>} - Resolves when the file is successfully deleted.
+ */
 async function removeFile(path) {
     try {
         await fs.unlink(path);
@@ -28,6 +45,10 @@ async function removeFile(path) {
     }
 }
 
+/**
+ * Retrieves system data including CPU model, memory usage, and Hailo device information.
+ * @returns {Object} System data containing CPU model, memory usage, and Hailo info.
+ */
 function getSystemData() {
     try {
         const cpuModel = execSync('lscpu | grep -i "model name" | awk -F: \'{print $2}\'').toString().trim();
@@ -49,6 +70,11 @@ function getSystemData() {
     }
 }
 
+/**
+ * Parses the raw output of Hailo device information into a structured object.
+ * @param {string} hailoInfo - Raw output from Hailo CLI.
+ * @returns {Object} Parsed Hailo device information.
+ */
 function parseHailoData(hailoInfo) {
     const hailoLines = hailoInfo.split('\n');
     const data = {};
@@ -63,6 +89,11 @@ function parseHailoData(hailoInfo) {
     return data;
 }
 
+/**
+ * Parses memory usage data from the `free -h` command output, some irrelevant data was excluded to send less data.
+ * @param {string} memory - Raw memory data output.
+ * @returns {Object} Parsed memory usage information.
+ */
 function parseMemoryData(memory) {
     const lines = memory.split('\n');
     const [total, used, free, shared, bufferCache, available] = lines[1].split(/\s+/).slice(1);
@@ -83,4 +114,14 @@ function parseMemoryData(memory) {
     };
 }
 
-module.exports={printToConsole, getSystemData}
+/**
+ * Generates a random integer between 0 (inclusive) and the specified maximum value (exclusive).
+ * @param {number} max - The upper bound (exclusive) for the random integer.
+ * @returns {number} A random integer between 0 and max.
+ */
+function getRandomInt(max) {
+  return Math.floor(Math.random() * max);
+}
+
+/** Exported utility functions. */
+module.exports={printToConsole, getSystemData, getRandomInt}

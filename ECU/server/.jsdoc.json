@@ -1,0 +1,12 @@
+{
+  "source": {
+    "include": ["."],
+    "exclude": ["node_modules", "test"],
+    "includePattern": ".+\\.js(doc|x)?$",
+    "excludePattern": "(^|\\/|\\\\)_"
+  },
+  "opts": {
+    "destination": "..\\..\\Docs\\Part_2\\3_ECU_unit_docs\\",
+    "recurse": true
+  }
+}

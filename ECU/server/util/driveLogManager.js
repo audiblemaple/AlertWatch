@@ -1,16 +1,35 @@
+/**
+ * @file driveLogManager.js
+ * @description Manages the creation and updating of drive log files with timestamped filenames.
+ * @author Lior Jigalo
+ * @license MIT
+ */
+
+/** Import file system and path modules */
 const fs = require("fs");
 const path = require("path");
 
+/** Current drive log filename */
 let currentDriveLogName = "";
+
+/** Current drive object containing log data */
 let currentDriveObject = {};
 
-// 1. Ensure the logs directory exists (relative to this module's __dirname)
+
+/**
+ * Directory for storing log files (relative to this module's __dirname).
+ * Ensures the logs directory exists.
+ * @type {string}
+ */
 const logsDir = path.join(__dirname, "../logs");
 if (!fs.existsSync(logsDir)) {
     fs.mkdirSync(logsDir, { recursive: true });
 }
 
-// Function to generate a custom timestamped filename (just the file name)
+/**
+ * Generates a custom timestamped filename for the log file.
+ * @returns {string} Timestamped filename.
+ */
 const generateDriveFileName = () => {
     const date = new Date();
     const seconds= String(date.getSeconds()).padStart(2, "0");
@@ -24,7 +43,9 @@ const generateDriveFileName = () => {
     return `Drive-${seconds}-${minutes}-${hours}T${day}-${month}-${year}.json`;
 };
 
-// Function to create a log file with a timestamped name
+/**
+ * Creates a log file with a timestamped filename and initializes it with default data.
+ */
 const createDriveLogFile = () => {
     const fileName = generateDriveFileName();
     // Use logsDir to build the absolute file path
@@ -48,7 +69,9 @@ const createDriveLogFile = () => {
     console.log(`Log file created: ${filePath}`);
 };
 
-// Function to update the existing log file with the current drive object
+/**
+ * Updates the existing log file with the current drive object.
+ */
 const updateDriveDataLog = () => {
     const filePath = path.join(logsDir, currentDriveLogName);
     fs.writeFileSync(filePath, JSON.stringify(currentDriveObject, null, 4), "utf8");
@@ -60,7 +83,16 @@ createDriveLogFile();
 
 // Export functions
 module.exports = {
+    /**
+     * Retrieves the current log file name.
+     * @returns {string} Current log file name.
+     */
     getCurrentFileName: () => currentDriveLogName,
+
+    /**
+     * Retrieves the absolute path to the current log file.
+     * @returns {string} Absolute path to the current log file.
+     */
     getCurrentFilePath: () => path.join(logsDir, currentDriveLogName),
     updateDriveDataLog,
     currentDriveObject,

@@ -9,5 +9,11 @@
     "natural": "^8.0.1",
     "winston": "^3.17.0",
     "ws": "^8.18.0"
-  }
+  },
+  "devDependencies": {
+    "jsdoc": "^4.0.4"
+  },
+  "scripts": {
+  "generate-docs": "jsdoc -c .jsdoc.json"
+}
 }

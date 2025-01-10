@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: util/driveLogManager.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: util/driveLogManager.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * @file driveLogManager.js
+ * @description Manages the creation and updating of drive log files with timestamped filenames.
+ * @author Lior Jigalo
+ * @license MIT
+ */
+
+/** Import file system and path modules */
+const fs = require("fs");
+const path = require("path");
+
+/** Current drive log filename */
+let currentDriveLogName = "";
+
+/** Current drive object containing log data */
+let currentDriveObject = {};
+
+
+/**
+ * Directory for storing log files (relative to this module's __dirname).
+ * Ensures the logs directory exists.
+ * @type {string}
+ */
+const logsDir = path.join(__dirname, "../logs");
+if (!fs.existsSync(logsDir)) {
+    fs.mkdirSync(logsDir, { recursive: true });
+}
+
+/**
+ * Generates a custom timestamped filename for the log file.
+ * @returns {string} Timestamped filename.
+ */
+const generateDriveFileName = () => {
+    const date = new Date();
+    const seconds= String(date.getSeconds()).padStart(2, "0");
+    const minutes= String(date.getMinutes()).padStart(2, "0");
+    const hours  = String(date.getHours()).padStart(2, "0");
+    const day    = String(date.getDate()).padStart(2, "0");
+    const month  = String(date.getMonth() + 1).padStart(2, "0"); // Month is zero-based
+    const year  = date.getFullYear();
+
+    // Return just the file name. We'll prepend logsDir when creating the filePath.
+    return `Drive-${seconds}-${minutes}-${hours}T${day}-${month}-${year}.json`;
+};
+
+/**
+ * Creates a log file with a timestamped filename and initializes it with default data.
+ */
+const createDriveLogFile = () => {
+    const fileName = generateDriveFileName();
+    // Use logsDir to build the absolute file path
+    const filePath = path.join(logsDir, fileName);
+
+    currentDriveLogName = fileName;
+
+    const initialData = {
+        timestamp: new Date().toISOString(),
+        alert_count: 0,
+        mild_alert_num: 0,
+        medium_alert_num: 0,
+        high_alert_num: 0,
+        consecutive_alert_num: 0,
+        consecutive_cant_parse: 0,
+    };
+
+    currentDriveObject = initialData;
+
+    fs.writeFileSync(filePath, JSON.stringify(initialData, null, 4), "utf8");
+    console.log(`Log file created: ${filePath}`);
+};
+
+/**
+ * Updates the existing log file with the current drive object.
+ */
+const updateDriveDataLog = () => {
+    const filePath = path.join(logsDir, currentDriveLogName);
+    fs.writeFileSync(filePath, JSON.stringify(currentDriveObject, null, 4), "utf8");
+    console.log(`Log file updated: ${filePath}`);
+};
+
+// Create the log file when this module is first imported
+createDriveLogFile();
+
+// Export functions
+module.exports = {
+    /**
+     * Retrieves the current log file name.
+     * @returns {string} Current log file name.
+     */
+    getCurrentFileName: () => currentDriveLogName,
+
+    /**
+     * Retrieves the absolute path to the current log file.
+     * @returns {string} Absolute path to the current log file.
+     */
+    getCurrentFilePath: () => path.join(logsDir, currentDriveLogName),
+    updateDriveDataLog,
+    currentDriveObject,
+};
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#WebSocket">WebSocket</a></li><li><a href="global.html#accelerateCar">accelerateCar</a></li><li><a href="global.html#app">app</a></li><li><a href="global.html#askForUserConfirmation">askForUserConfirmation</a></li><li><a href="global.html#bodyParser">bodyParser</a></li><li><a href="global.html#broadcast">broadcast</a></li><li><a href="global.html#broadcastSpeed">broadcastSpeed</a></li><li><a href="global.html#carState">carState</a></li><li><a href="global.html#confirmationPhrases">confirmationPhrases</a></li><li><a href="global.html#cors">cors</a></li><li><a href="global.html#createDriveLogFile">createDriveLogFile</a></li><li><a href="global.html#cruiseDrive">cruiseDrive</a></li><li><a href="global.html#currentDriveLogName">currentDriveLogName</a></li><li><a href="global.html#currentDriveObject">currentDriveObject</a></li><li><a href="global.html#decelerateCar">decelerateCar</a></li><li><a href="global.html#detectionUnitData">detectionUnitData</a></li><li><a href="global.html#express">express</a></li><li><a href="global.html#fs">fs</a></li><li><a href="global.html#generateDriveFileName">generateDriveFileName</a></li><li><a href="global.html#getRandomInt">getRandomInt</a></li><li><a href="global.html#getSystemData">getSystemData</a></li><li><a href="global.html#handleClientMessage">handleClientMessage</a></li><li><a href="global.html#hasAlertConfirmation">hasAlertConfirmation</a></li><li><a href="global.html#initWebSocket">initWebSocket</a></li><li><a href="global.html#locks">locks</a></li><li><a href="global.html#logStatus">logStatus</a></li><li><a href="global.html#logsDir">logsDir</a></li><li><a href="global.html#muteAllStreams">muteAllStreams</a></li><li><a href="global.html#noResponsePhrases">noResponsePhrases</a></li><li><a href="global.html#parseHailoData">parseHailoData</a></li><li><a href="global.html#parseMemoryData">parseMemoryData</a></li><li><a href="global.html#parseWhisperOutput">parseWhisperOutput</a></li><li><a href="global.html#path">path</a></li><li><a href="global.html#playSound">playSound</a></li><li><a href="global.html#printToConsole">printToConsole</a></li><li><a href="global.html#recordAudioWithFFmpeg">recordAudioWithFFmpeg</a></li><li><a href="global.html#removeFile">removeFile</a></li><li><a href="global.html#sendWelcomeMessage">sendWelcomeMessage</a></li><li><a href="global.html#sounds">sounds</a></li><li><a href="global.html#speed">speed</a></li><li><a href="global.html#startApp">startApp</a></li><li><a href="global.html#startSpeedBroadcast">startSpeedBroadcast</a></li><li><a href="global.html#status">status</a></li><li><a href="global.html#stemmedConfirmationPhrases">stemmedConfirmationPhrases</a></li><li><a href="global.html#stemmedNoResponsePhrases">stemmedNoResponsePhrases</a></li><li><a href="global.html#transcribeWithWhisper">transcribeWithWhisper</a></li><li><a href="global.html#units">units</a></li><li><a href="global.html#unmuteAllStreams">unmuteAllStreams</a></li><li><a href="global.html#updateDriveDataLog">updateDriveDataLog</a></li><li><a href="global.html#updateSpeed">updateSpeed</a></li><li><a href="global.html#user_status">user_status</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Fri Jan 10 2025 18:03:51 GMT+0200 (GMT+02:00)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

@@ -1,13 +1,30 @@
+/**
+ * @file carSpeedManager.js
+ * @description Manages car speed states and broadcasts updates to WebSocket clients.
+ * @author Lior Jigalo
+ * @license MIT
+ */
+
+/** Load environment variables from .env file */
 require("dotenv").config();
+
+/** Extract environment variables */
 const {maxSpeed, updateFreq} = process.env;
+
+/** Import WebSocket library */
 const WebSocket = require("ws");
+
+/** Import constants and utility functions */
 const {units} = require("./const");
 const {carState} = require("./global");
-const {getRandomInt} = require("./random");
+const {getRandomInt} = require("./util");
 
+/** Current speed of the car, starting from 0 */
 let speed = 0;
 
-// Function to generate a random speed update
+/**
+ * Updates the car's speed based on its state.
+ */
 function updateSpeed() {
     if (carState.accelerating)
         accelerateCar();
@@ -19,6 +36,9 @@ function updateSpeed() {
     //     console.log("car stopped"); // TODO: add logic of constant beeping
 }
 
+/**
+ * Logs the current state of the car to the console.
+ */
 function logStatus(){
     console.log("accelerating: ", carState.accelerating)
     console.log("decelerating: ", carState.decelerating)
@@ -28,7 +48,10 @@ function logStatus(){
     console.log("\n")
 }
 
-// Function to start broadcasting speed updates
+/**
+ * Starts broadcasting the car's speed to all connected WebSocket clients.
+ * @param {WebSocket.Server} wss - The WebSocket server instance.
+ */
 function startSpeedBroadcast(wss) {
     setInterval(() => {
         updateSpeed();
@@ -37,7 +60,11 @@ function startSpeedBroadcast(wss) {
     }, updateFreq * units.second);
 }
 
-// Function to broadcast speed to all connected WebSocket clients
+/**
+ * Broadcasts the current speed to all connected WebSocket clients.
+ * @param {WebSocket.Server} wss - The WebSocket server instance.
+ * @param {number} speed - The current speed of the car.
+ */
 function broadcastSpeed(wss, speed) {
     if (carState.stopped)
         return;
@@ -53,6 +80,9 @@ function broadcastSpeed(wss, speed) {
     });
 }
 
+/**
+ * Accelerates the car and updates its state.
+ */
 function accelerateCar(){
     carState.accelerating = true;
     carState.decelerating = false;
@@ -61,6 +91,9 @@ function accelerateCar(){
     speed += Math.floor(9 * ((7 + getRandomInt(5)) / 10));
 }
 
+/**
+ * Decelerates the car and updates its state.
+ */
 function decelerateCar(){
     carState.accelerating = false;
     carState.decelerating = true;
@@ -75,6 +108,9 @@ function decelerateCar(){
     speed += Math.floor(-9 * ((7 + getRandomInt(3)) / 10));
 }
 
+/**
+ * Sets the car to cruise mode and updates its state.
+ */
 function cruiseDrive(){
     carState.accelerating = false;
     carState.decelerating = false;
@@ -84,6 +120,11 @@ function cruiseDrive(){
     getRandomInt(101) >= 50 ? speed += getRandomInt(5) :  speed -= getRandomInt(3);
 }
 
-
-
-module.exports = { startSpeedBroadcast, maxSpeed, accelerateCar, decelerateCar, cruiseDrive};
+/** Export functions */
+module.exports = {
+    startSpeedBroadcast,
+    maxSpeed,
+    accelerateCar,
+    decelerateCar,
+    cruiseDrive,
+};
