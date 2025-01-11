@@ -1,75 +1,127 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>GitHub Directory Links</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+            href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap"
+            rel="stylesheet"
+    />
     <style>
-        body {
-            font-family: Arial, sans-serif;
+        /* Reset some default browser styles */
+        * {
             margin: 0;
             padding: 0;
-            background-color: #f4f4f9;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            font-size: 20px;
+            background: linear-gradient(120deg, #f4f4f9, #e7ecf2);
             color: #333;
             line-height: 1.6;
+            min-height: 100vh;
+            position: relative;
+            padding-bottom: 60px; /* Reserve space for fixed footer */
         }
+
         header {
-            background: #007bff;
+            background: rgba(0, 123, 255, 0.63);
             color: #fff;
-            padding: 1rem 0;
+            padding: 2rem 0;
             text-align: center;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
         }
+
         header h1 {
             margin: 0;
             font-size: 2rem;
+            font-weight: 700;
         }
+
         main {
-            padding: 2rem;
+            min-height: 300px;
+            height: 40svh;
             max-width: 800px;
-            margin: 0 auto;
+            margin: 2rem auto;
             background: #fff;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
         }
+
+        main b {
+            display: block;
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+        }
+
         ul {
             list-style-type: none;
             padding: 0;
         }
+
         li {
-            margin: 10px 0;
+            margin: 0.8rem 0;
+            transition: background-color 0.3s;
+            border-left: 4px solid rgba(0, 123, 255, 0.63);
+            padding-left: 1rem;
         }
+
+        li:hover {
+            background-color: #f9f9ff;
+        }
+
         a {
             text-decoration: none;
             color: #007bff;
-            font-weight: bold;
+            font-weight: 500;
+            transition: color 0.3s;
         }
+
         a:hover {
+            color: #0056ff;
             text-decoration: underline;
         }
+
         footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 123, 255, 0.63);
+            color: #fff;
             text-align: center;
             padding: 1rem 0;
-            margin-top: 2rem;
-            background: #007bff;
-            color: #fff;
+            box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.15);
         }
     </style>
 </head>
 <body>
-    <header>
-        <h1>Alertwatch Docs</h1>
-    </header>
-    <main>
-        <b>Alertwatch capstone project documentation links:</b>
-        <ul>
-            <li>1. <a href="./1_Hailo_model_preparation">Hailo models preparation documentation</a></li>
-            <li>2. <a href="./2_Detection_unit_docs/main.html">Detection unit documentation</a></li>
-            <li>3. <a href="./3_ECU_unit_docs/index.html">ECU unit documentation</a></li>
-        </ul>
-    </main>
-    <footer>
-        <p>&copy; 2025 Alertwatch</p>
-    </footer>
+<header>
+    <h1>Alertwatch Docs</h1>
+</header>
+<main>
+    <b>Alertwatch capstone project documentation links:</b>
+    <ul>
+        <li>
+            1. <a href="./1_Hailo_model_preparation">Hailo models preparation documentation</a>
+        </li>
+        <li>
+            2. <a href="./2_Detection_unit_docs/main.html">Detection unit documentation</a>
+        </li>
+        <li>
+            3. <a href="./3_ECU_unit_docs/index.html">ECU unit documentation</a>
+        </li>
+    </ul>
+</main>
+<footer>
+    <p>Lior Jigalo - Alertwatch</p>
+</footer>
 </body>
 </html>
