@@ -9,6 +9,10 @@ If a drop in alertness is detected, the detection system will signal the ECU to 
 * [Book](Capstone_Project_Docs/Part_1/AlertWatch.docx)
 * [Presentation](Capstone_Project_Docs/Part_1/Alertwatch.pptx)
 
+
+## Developer documentation 
+[DEV docs](docs/index.html)
+
 ## Components
 The system comprises 2 parts:
 * [ECU / Management unit](#ecu--management-unit)
