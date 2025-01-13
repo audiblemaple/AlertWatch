@@ -33,6 +33,7 @@
         }
         main {
             padding: 20px;
+            margin-bottom: 50px;
         }
         section {
             margin-bottom: 20px;
@@ -58,6 +59,7 @@
         <a href="#section2">Parsing</a>
         <a href="#section3">Optimization</a>
         <a href="#section4">Compilation</a>
+        <a href="#section5">Usage</a>
     </nav>
 
     <main>
@@ -72,27 +74,72 @@
             <h2>Parsing</h2>
             <p>
               Use the translated .onnx model file to parse it to a .har (Hailo archive) file.
-              Go to <a href="https://github.com/audiblemaple/AlertWatch/tree/main/hailo/1.parsing_Final">/hailo</a>
+              Go to <a href="https://github.com/audiblemaple/AlertWatch/tree/main/hailo/1.parsing">/hailo</a>
             </p>
           Run:<br>
             <code>
-                . parse_model.sh "path to .onnx model"
+                . parse_model.sh "path_to_.onnx_model"
             </code>
         </section>
 
         <section id="section3">
             <h2>Optimization</h2>
-            <p>The third section can include additional resources, references, or external links.</p>
-            <ul>
-                <li><a href="https://another-example.com">Another Example Link</a></li>
-                <li><a href="https://docs.example.com">Documentation Example</a></li>
-            </ul>
+            <p>
+                To optimize the model we first need to create the calibration set so the model will know what data types to expect as input and calibrates the weights correctly when optimizing.
+            </p>
+            Go to <a href="https://github.com/audiblemaple/AlertWatch/tree/main/hailo/2.create_calibration_setl">hailo/2.create_calibration_set_Final</a>
+            <br>
+            Run: <br>
+            <code>
+                # Create a directory with preprocessed faces resized to 224x224 as the model expects
+                <br>
+                python3 preprocess_images.py
+                <br> <br>
+                # create the calibration set as a .npy array file
+                <br>
+                python3 prepare_calibration_set_FLOAT32.py
+                <br>
+            </code>
+            Go to <a href="https://github.com/audiblemaple/AlertWatch/tree/main/hailo/3.optimization">hailo/3.optimization_Final</a>
+            <br>
+            Run:
+            <br>
+            <code>
+                # Optimize the model
+                <br>
+                . optimize_model.sh --hw-arch 'hardware architecture' --calib-set-path 'calibration set' --output-har-path 'output file name' 'input file
+                <br>
+                <br>
+                # For help run
+                <br>
+                . optimize_model.sh
+            </code>
+
         </section>
 
         <section id="section4">
             <h2>Compilation</h2>
-            <p>This is the second section. Add more content, links, or images as needed.</p>
+            Go to <a href="https://github.com/audiblemaple/AlertWatch/tree/main/hailo/4.compilation">hailo/4.compilation</a>
+            <br>
+            Run:
+            <br>
+            <code>
+                # Compile the model
+                <br>
+                . compile_model.sh --hw-arch 'hardware architecture' --output-dir output 'input_file'
+                <br>
+                <br>
+                # For help run
+                <br>
+                . compile_model.sh
+            </code>
         </section>
+
+        <section id="section5">
+            <h2>Usage</h2>
+            Copy the compiled .hef model to the main detector file and specify the path to the model in the code
+        </section>
+
     </main>
 
     <footer>
