@@ -95,7 +95,7 @@ num_classes = 136  # For 68 facial landmarks, 2 coordinates each (x, y)
 model = Network(num_classes=num_classes)
 
 # Load the trained .pth file (replace 'path_to_your_model.pth' with the actual path)
-model_path = '../../hailo/1.parsing_Final/models/face_landmarks_epoch_9319.pth'  # Adjust to your model path
+model_path = '../../hailo/1.parsing/models/face_landmarks_epoch_9319.pth'  # Adjust to your model path
 model.load_state_dict(torch.load(model_path, map_location=torch.device('cpu')))
 
 # Set the model to evaluation mode

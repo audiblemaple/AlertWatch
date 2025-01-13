@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model preparation for Hailo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+        header {
+            background: #333;
+            color: #fff;
+            padding: 10px 20px;
+            text-align: center;
+        }
+        nav {
+            background: #555;
+            padding: 10px;
+        }
+        nav a {
+            color: #fff;
+            text-decoration: none;
+            margin-right: 10px;
+        }
+        nav a:hover {
+            text-decoration: underline;
+        }
+        main {
+            padding: 20px;
+        }
+        section {
+            margin-bottom: 20px;
+        }
+        footer {
+            text-align: center;
+            padding: 10px;
+            background: #333;
+            color: #fff;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Model preparation for Hailo</h1>
+    </header>
+
+    <nav>
+        <a href="#section1">Translating</a>
+        <a href="#section2">Parsing</a>
+        <a href="#section3">Optimization</a>
+        <a href="#section4">Compilation</a>
+    </nav>
+
+    <main>
+        <section id="section1">
+            <h2>Translating</h2>
+            <p>
+              First, the model needs to be parsed from a .pth format into onnx, run <a href="https://github.com/audiblemaple/AlertWatch/blob/main/face_landmarks_detection/conversion/convert_pth_to_onnx.py">convert_pth_to_onnx.py</a> with the pytorch model.
+            </p>
+        </section>
+
+        <section id="section2">
+            <h2>Parsing</h2>
+            <p>
+              Use the translated .onnx model file to parse it to a .har (Hailo archive) file.
+              Go to <a href="https://github.com/audiblemaple/AlertWatch/tree/main/hailo/1.parsing_Final">/hailo</a>
+            </p>
+          Run:<br>
+            <code>
+                . parse_model.sh "path to .onnx model"
+            </code>
+        </section>
+
+        <section id="section3">
+            <h2>Optimization</h2>
+            <p>The third section can include additional resources, references, or external links.</p>
+            <ul>
+                <li><a href="https://another-example.com">Another Example Link</a></li>
+                <li><a href="https://docs.example.com">Documentation Example</a></li>
+            </ul>
+        </section>
+
+        <section id="section4">
+            <h2>Compilation</h2>
+            <p>This is the second section. Add more content, links, or images as needed.</p>
+        </section>
+    </main>
+
+    <footer>
+        <p>Lior Jigalo - Alertwatch</p>
+    </footer>
+</body>
+</html>

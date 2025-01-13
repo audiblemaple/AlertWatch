@@ -8,7 +8,7 @@ This section outlines the process:
 * Running the .hef on hailo hardware
 
 ## PyTorch -> har
-* [Parsing](1.parsing_Final)
+* [Parsing](1.parsing)
 
 ## Quantization
 * [Optimization](3.optimization_Final)
