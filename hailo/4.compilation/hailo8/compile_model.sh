@@ -20,7 +20,7 @@ fi
 input_file=$2
 
 echo -e "\n\e[33mCompiling model\e[0m"
-
+mkdir -p output
 hailo compiler --hw-arch "$hw_arch" --output-dir output "$input_file"
 rm *log
 

@@ -11,7 +11,7 @@ This section outlines the process:
 * [Parsing](1.parsing)
 
 ## Quantization
-* [Optimization](3.optimization_Final)
+* [Optimization](3.optimization)
 
 ## har -> hef
 * [Compilation](4.compilation)
