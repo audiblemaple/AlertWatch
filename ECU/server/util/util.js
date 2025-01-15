@@ -4,7 +4,6 @@
  * @author Lior Jigalo
  * @license MIT
  */
-const {DEBUG} = process.env;
 const fs = require('fs')
 const { execSync } = require('child_process');
 
@@ -12,9 +11,12 @@ const { execSync } = require('child_process');
  * Logs a message to the console if debugging is enabled.
  * @param {string} message - The message to log.
  */
+// utility.js
 function printToConsole(message){
-    if (DEBUG === "1")
-        console.log(message);
+  // Read process.env.DEBUG each time
+  if (process.env.DEBUG === "1") {
+    console.log(message);
+  }
 }
 
 /**
