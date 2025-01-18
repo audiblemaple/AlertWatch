@@ -20,6 +20,14 @@ function printToConsole(message){
 }
 
 /**
+ * Helper function to create a delay
+ * @param {int} ms - The time to wait in milliseconds.
+ */
+function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
  * Deletes a file at the specified path.
  * @async
  * @param {string} path - The path of the file to delete.
@@ -126,4 +134,4 @@ function getRandomInt(max) {
 }
 
 /** Exported utility functions. */
-module.exports={printToConsole, getSystemData, getRandomInt}
+module.exports={printToConsole, getSystemData, getRandomInt, delay}

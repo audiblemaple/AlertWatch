@@ -52,6 +52,8 @@ const sounds = {
     decelerateWarning:  path.join(__dirname, '../assets/sounds', 'decelerateWarning.wav'),
     decelerating:       path.join(__dirname, '../assets/sounds', 'decelerating.wav'),
     gotIt:              path.join(__dirname, '../assets/sounds', 'gotIt.wav'),
+    beep:               path.join(__dirname, '../assets/sounds', 'beep.wav'),
+
 };
 
 /**

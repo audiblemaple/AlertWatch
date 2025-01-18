@@ -15,7 +15,7 @@ const WebSocket = require("ws");
 const {playSound, askForUserConfirmation} = require("./util/sound");
 
 /** Import general utility functions */
-const {printToConsole, getSystemData, getRandomInt} = require("./util/util");
+const {printToConsole, getSystemData, getRandomInt, delay} = require("./util/util");
 
 /** Import car management functions */
 const {startSpeedBroadcast, decelerateCar, accelerateCar} = require("./util/carManager");
@@ -24,7 +24,7 @@ const {startSpeedBroadcast, decelerateCar, accelerateCar} = require("./util/carM
 const {currentDriveObject, updateDriveDataLog} = require("./util/driveLogManager");
 
 /** Import global variables */
-const {user_status, locks, sounds} = require("./util/global");
+const {user_status, locks, sounds, carState} = require("./util/global");
 
 /**
  * @typedef {object} MessageData
@@ -221,9 +221,16 @@ async function handleClientMessage(ws, message, wss) {
                                         // Should ideally loop until response is valid, ill do that later...
                                         await playSound(sounds.failedToParse);
                                     } else {
-                                        // TODO: find a way to interrupt this process
+                                        // TODO: find a way to interrupt this process (currently, manual confirmation should suffice)
                                         await playSound(sounds.decelerating);
                                         decelerateCar();
+                                        const count = 60;
+                                        let counter = 0;
+                                        while (carState.decelerating === true || counter <= count){
+                                            await playSound(sounds.beep);
+                                            await delay(500);
+                                            counter++
+                                        }
                                     }
                                 }
 
@@ -234,8 +241,8 @@ async function handleClientMessage(ws, message, wss) {
                             }
                             break; // End of "alert" logic when medium_alert_num > 0
                         }
-                            // If this is the first time medium_alert_num = 0, just play "takeABreak"
-                        //    and increment the alert count
+                        // If this is the first time medium_alert_num = 0, just play "takeABreak"
+                        // and increment the alert count
                         else {
                             await playSound(sounds.takeABreak);
                             currentDriveObject.medium_alert_num += 1;
