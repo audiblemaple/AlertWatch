@@ -58,11 +58,11 @@ function unmuteAllStreams() {
 function playSound(filePath) {
     return new Promise((resolve, reject) => {
         // muteAllStreams();
-            const player = null
+            var player = null
             if (process.env.OS === "ubuntu")
                 player = spawn('aplay', [filePath]);
             else
-                player = spawn('aplay', ['-D', 'plughw:$(aplay -l | grep -i "usb audio" | grep -io "card [0-9]" | grep -o [0-9]),0', filePath]);
+                player = spawn('aplay', ['-D', 'plughw:3,0', filePath]);
 
         player.on('error', (err) => {
             console.error(`Error playing sound: ${err.message}`);
@@ -195,26 +195,91 @@ function parseWhisperOutput(rawOutput) {
  * @param {number} durationInSeconds - Duration to record in seconds.
  * @returns {Promise<void>}
  */
-function recordAudioWithFFmpeg(outputFilePath, durationInSeconds = 5) {
-    return new Promise((resolve, reject) => {
+// function recordAudioWithFFmpeg(outputFilePath, durationInSeconds = 5) {
+//     return new Promise((resolve, reject) => {
+//
+//         ffmpeg()
+//             .input('default')
+//             .inputFormat('alsa')
+//             .audioFrequency(16000)
+//             .audioChannels(1)
+//             .audioCodec('pcm_s16le')
+//             .format('wav')
+//             .duration(durationInSeconds)
+//             .on('end', () => {
+//                 resolve();
+//             })
+//             .on('error', (err) => {
+//                 reject(err);
+//             })
+//             .save(outputFilePath);
+//     });
+// }
 
-        ffmpeg()
-            .input('default')
+
+/**
+ * Records audio using ffmpeg and saves it as a WAV file in 16kHz mono format.
+ * @param {string} outputFilePath - Path to save the recorded WAV file.
+ * @param {number} [durationInSeconds=5] - Duration to record in seconds.
+ * @param {string} [audioDevice='default'] - ALSA audio device to use for recording.
+ * @param {boolean} [verbose=false] - Enable verbose logging.
+ * @returns {Promise<void>}
+ */
+function recordAudioWithFFmpeg(outputFilePath, durationInSeconds = 5, audioDevice = 'plughw:2,0', verbose = false) {
+    return new Promise((resolve, reject) => {
+        // Validate outputFilePath
+        if (typeof outputFilePath !== 'string' || outputFilePath.trim() === '') {
+            return reject(new Error('Invalid output file path.'));
+        }
+
+        // Validate duration
+        if (typeof durationInSeconds !== 'number' || durationInSeconds <= 0) {
+            return reject(new Error('Duration must be a positive number.'));
+        }
+
+        // Initialize FFmpeg command
+        let command = ffmpeg()
+            .input(audioDevice)
             .inputFormat('alsa')
-            .audioFrequency(16000)
-            .audioChannels(1)
-            .audioCodec('pcm_s16le')
+            .audioFrequency(16000) // 16kHz
+            .audioChannels(1)       // Mono
+            .audioCodec('pcm_s16le')// PCM 16-bit little endian
             .format('wav')
             .duration(durationInSeconds)
-            .on('end', () => {
-                resolve();
-            })
-            .on('error', (err) => {
-                reject(err);
-            })
             .save(outputFilePath);
+
+        // Enable verbose logging if requested
+        if (verbose) {
+            command = command
+                .on('start', (cmdLine) => {
+                    console.log(`FFmpeg process started: ${cmdLine}`);
+                })
+                .on('progress', (progress) => {
+                    console.log(`Processing: ${progress.percent ? progress.percent.toFixed(2) : 0}% done`);
+                });
+        }
+
+        // Handle process end
+        command.on('end', () => {
+            if (verbose) {
+                console.log('FFmpeg recording finished successfully.');
+            }
+            resolve();
+        });
+
+        // Handle errors
+        command.on('error', (err, stdout, stderr) => {
+            console.error('FFmpeg error:', err.message);
+            if (verbose) {
+                console.error('FFmpeg stdout:', stdout);
+                console.error('FFmpeg stderr:', stderr);
+            }
+            reject(new Error(`FFmpeg recording failed: ${err.message}`));
+        });
     });
 }
+
+
 
 /**
  * Prompts the user for a confirmation of alertness by recording and analyzing audio.
