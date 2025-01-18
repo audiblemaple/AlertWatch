@@ -15,7 +15,6 @@ from .faceController import (
 
 WS_URL: str = "ws://192.168.0.63:5000"
 
-
 class MockAppState:
     def __init__(self):
         self.current_EAR = 0.0

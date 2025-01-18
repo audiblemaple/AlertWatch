@@ -52,7 +52,7 @@ def test_init_cv_cap(platform_str, videopath, expected_args):
 def test_init_cv_cap_defaults():
     """
     Test that init_cv_cap() sets default width, height, and fps when no arguments are passed.
-    This also confirms videopath=None on a non-Windows platform (assume Linux here).
+    This also confirms videopath=None on a non-Windows platform (assume Linux since its the target OS).
     """
     mock_capture_instance = MagicMock(spec=cv2.VideoCapture)
 

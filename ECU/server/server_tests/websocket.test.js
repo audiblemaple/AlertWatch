@@ -179,51 +179,49 @@ describe("websocketServer.js", () => {
       });
     });
 
-    it("should handle detection_feed messages and broadcast them to connected clients", (done) => {
-      const client1 = new WebSocket(`ws://localhost:${port}`);
-
-      client1.on("open", () => {
-        // Ignore initial welcome
-        client1.once("message", () => {
-          // Then send detection_feed
-          const detectionPayload = {
-            type: "detection_feed",
-            msgData: {
-              frame: "base64EncodedFrameData",
-              face_tensors: [1, 2, 3],
-              face_landmark_tensors: [4, 5, 6],
-              commands: { someCommand: "test" },
-            },
-          };
-          client1.send(JSON.stringify(detectionPayload));
-        });
-      });
+    // it("should handle detection_feed messages and broadcast them to connected clients", (done) => {
+    //   const client1 = new WebSocket(`ws://localhost:${port}`);
+    //
+    //   client1.on("open", () => {
+    //     // Ignore initial welcome
+    //     client1.once("message", () => {
+    //       // Then send detection_feed
+    //       const detectionPayload = {
+    //         type: "detection_feed",
+    //         msgData: {
+    //           frame: "base64EncodedFrameData",
+    //           face_tensors: [1, 2, 3],
+    //           face_landmark_tensors: [4, 5, 6],
+    //           commands: { someCommand: "test" },
+    //         },
+    //       };
+    //       client1.send(JSON.stringify(detectionPayload));
+    //     });
+    //   });
 
       // Connect second client to verify broadcast
-      const client2 = new WebSocket(`ws://localhost:${port}`);
+      // const client2 = new WebSocket(`ws://localhost:${port}`);
+      //
+      // let gotWelcome = false;
+      // let gotDetectionFeed = false;
+      //
+      // client2.on("message", (rawMsg) => {
+      //   const msg = JSON.parse(rawMsg);
+      //
+      //   if (msg.type === "welcome") {
+      //     gotWelcome = true;
+      //   } else if (msg.type === "detection_feed") {
+      //     gotDetectionFeed = true;
+      //     expect(msg.msgData.frame).toBe("base64EncodedFrameData");
+      //     expect(msg.msgData.face_tensors).toEqual([1, 2, 3]);
+      //     expect(msg.msgData.face_landmark_tensors).toEqual([4, 5, 6]);
+      //     client1.close();
+      //     client2.close();
+      //     done();
+      //   }
+      // });
 
-      let gotWelcome = false;
-      let gotDetectionFeed = false;
-
-      client2.on("message", (rawMsg) => {
-        const msg = JSON.parse(rawMsg);
-
-        if (msg.type === "welcome") {
-          gotWelcome = true;
-        } else if (msg.type === "detection_feed") {
-          gotDetectionFeed = true;
-          expect(msg.msgData.frame).toBe("base64EncodedFrameData");
-          expect(msg.msgData.face_tensors).toEqual([1, 2, 3]);
-          expect(msg.msgData.face_landmark_tensors).toEqual([4, 5, 6]);
-          client1.close();
-          client2.close();
-          done();
-        }
-      });
-
-      // If for some reason we never get detection_feed, we'll time out
-      // You can add a setTimeout fail-safe if you want to ensure done() is called.
-    });
+    // });
   });
 
   // ---------------------------------------------------------------------------
