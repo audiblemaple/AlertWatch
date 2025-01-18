@@ -15,6 +15,6 @@
   },
   "scripts": {
     "test": "jest",
-  "generate-docs": "jsdoc -c .jsdoc.json"
-}
+    "generate-docs": "jsdoc -c .jsdoc.json"
+  }
 }

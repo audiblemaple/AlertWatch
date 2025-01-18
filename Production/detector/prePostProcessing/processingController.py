@@ -35,10 +35,9 @@ License:
     MIT
 """
 
+
 import cv2
 import numpy as np
-from triton.language import dtype
-
 
 def preprocess_face_landmarks(frame, bbox, input_shape, gray=True):
     """
@@ -51,13 +50,11 @@ def preprocess_face_landmarks(frame, bbox, input_shape, gray=True):
         gray (bool): Whether to convert the face ROI to grayscale.
 
     Returns:
-        tuple: (preprocessed_face, adjusted_bbox) or (None, bbox) if invalid.
+        tuple: (preprocessed_face, bbox) or (None, bbox) if invalid.
     """
     x1, y1, x2, y2 = bbox
 
-    # -----------------------------
-    # 1. Clamp bounding box to frame boundaries
-    # -----------------------------
+    # Clamp bounding box to frame boundaries
     x1 = max(0, int(round(x1)))
     y1 = max(0, int(round(y1)))
     x2 = min(frame.shape[1], int(round(x2)))
@@ -66,24 +63,16 @@ def preprocess_face_landmarks(frame, bbox, input_shape, gray=True):
     if x2 <= x1 or y2 <= y1:
         return None, bbox
 
-    # -----------------------------
-    # 2. Extract face ROI directly
-    # -----------------------------
+    # Extract face ROI
     face_roi = frame[y1:y2, x1:x2]
     if face_roi.size == 0:
         return None, bbox
 
-    # -----------------------------
-    # 3. Convert to grayscale only if needed
-    #    (Skipping extra copies)
-    # -----------------------------
+    # Convert to grayscale if needed
     if gray:
         face_roi = cv2.cvtColor(face_roi, cv2.COLOR_BGR2GRAY)
 
-    # -----------------------------
-    # 4. Determine scaling factor
-    #    We use max(...) to ensure face_roi >= input_shape
-    # -----------------------------
+    # Determine scaling factor
     face_h, face_w = face_roi.shape[:2]
     target_h, target_w = input_shape[:2]
 
@@ -99,53 +88,38 @@ def preprocess_face_landmarks(frame, bbox, input_shape, gray=True):
     if new_w <= 0 or new_h <= 0:
         return None, bbox
 
-    # -----------------------------
-    # 5. Resize face ROI (using NEAREST or AREA for speed)
-    #    INTER_NEAREST is faster but lower quality;
-    #    INTER_AREA is good for shrinking.
-    # -----------------------------
+    # Resize face ROI using INTER_NEAREST for speed
     resized_face = cv2.resize(face_roi, (new_w, new_h), interpolation=cv2.INTER_NEAREST)
 
-    # -----------------------------
-    # 6. Center-crop (or letterbox) to target shape
-    #    Minimize branching by computing offsets carefully.
-    # -----------------------------
+    # Center-crop or letterbox to target shape
     x_offset = (new_w - target_w) // 2
     y_offset = (new_h - target_h) // 2
 
-    # Create an appropriately sized array (1 or 3 channels)
+    # Initialize padded image
     if gray:
         preprocessed_face = np.zeros((target_h, target_w), dtype=resized_face.dtype)
     else:
         preprocessed_face = np.zeros((target_h, target_w, 3), dtype=resized_face.dtype)
 
-    # Crop region from resized face (within bounds)
-    # Start indices in the resized face
+    # Calculate coordinates for cropping
     r_x1 = max(0, x_offset)
     r_y1 = max(0, y_offset)
-    # End indices in the resized face
     r_x2 = r_x1 + min(target_w, new_w)
     r_y2 = r_y1 + min(target_h, new_h)
 
-    # Start indices in the target array
     t_x1 = max(0, -x_offset)
     t_y1 = max(0, -y_offset)
-    # End indices in the target array
     t_x2 = t_x1 + (r_x2 - r_x1)
     t_y2 = t_y1 + (r_y2 - r_y1)
 
-    # Copy from resized_face into the final array
+    # Copy resized face into padded image
     preprocessed_face[t_y1:t_y2, t_x1:t_x2] = resized_face[r_y1:r_y2, r_x1:r_x2]
 
-    # -----------------------------
-    # 7. Expand dims to match model input format
-    #    Typically (1, H, W, C) for many TF or ONNX models
-    # -----------------------------
+    # Expand dimensions to match model input format
     if gray:
-        # shape -> (H, W) becomes (H, W, 1)
         preprocessed_face = preprocessed_face[..., np.newaxis]
 
-    # Insert batch dimension -> (1, H, W, [C])
+    # Add batch dimension
     preprocessed_face = np.expand_dims(preprocessed_face, axis=0)
 
     return preprocessed_face, bbox
@@ -184,26 +158,24 @@ def preprocess_face_detection(image, input_size=(640, 640)) -> tuple[np.ndarray,
     img_h, img_w = image.shape[:2]
     input_w, input_h = input_size
 
-    # 1. Compute scale factor once
+    # Compute scaling factor
     scale = min(input_w / img_w, input_h / img_h)
 
     new_w = round(img_w * scale)
     new_h = round(img_h * scale)
 
-    # 2. Resize image
-    # Using NEAREST for speed; INTER_AREA or LINEAR may be better for quality
+    # Resize image using INTER_NEAREST for speed
     resized_image = cv2.resize(image, (new_w, new_h), interpolation=cv2.INTER_NEAREST)
 
-    # 3. Padding
+    # Calculate padding
     pad_w = (input_w - new_w) // 2
     pad_h = (input_h - new_h) // 2
 
-    # 4. Create the padded array once
+    # Initialize padded image with padding value 127
     padded_image = np.full((input_h, input_w, 3), 127, dtype=np.uint8)
     padded_image[pad_h:pad_h + new_h, pad_w:pad_w + new_w] = resized_image
 
     return padded_image, scale, pad_w, pad_h, img_w, img_h
-
 
 def generate_anchors(fm_sizes, input_size, steps, min_sizes) -> np.ndarray:
     """
@@ -223,17 +195,16 @@ def generate_anchors(fm_sizes, input_size, steps, min_sizes) -> np.ndarray:
         scale = input_size / steps[idx]
         fm_w, fm_h = fm_size
         for i in range(fm_h):
+            cy = (i + 0.5) / scale
             for j in range(fm_w):
                 cx = (j + 0.5) / scale
-                cy = (i + 0.5) / scale
                 for min_size in min_sizes[idx]:
                     w = min_size / input_size
                     h = min_size / input_size
                     anchors.append([cx, cy, w, h])
     return np.array(anchors)
 
-
-def postprocess_faces(outputs, pad_w, pad_h, score_threshold=0.67, nms_threshold=0.4) -> list[(int, int, int, int, float)] | None:
+def postprocess_faces(outputs, pad_w, pad_h, score_threshold=0.67, nms_threshold=0.4) -> list[tuple[int, int, int, int, float]] | None:
     """
     Postprocess model outputs to extract face bounding boxes.
 
@@ -250,7 +221,7 @@ def postprocess_faces(outputs, pad_w, pad_h, score_threshold=0.67, nms_threshold
     def sigmoid(x):
         return 1.0 / (1.0 + np.exp(-x))
 
-    def decode_bboxes(bbox_pred, anchors, variances=None) -> np.ndarray[any, dtype]:
+    def decode_bboxes(bbox_pred, anchors, variances=None) -> np.ndarray:
         if variances is None:
             variances = [0.000001, 0.005]
         boxes = np.zeros_like(bbox_pred)
@@ -305,12 +276,9 @@ def postprocess_faces(outputs, pad_w, pad_h, score_threshold=0.67, nms_threshold
     boxes[:, 3] -= pad_h
 
     # Adjust box position
-    # boxes[:, 0] += 5   # shift left side right
-    # boxes[:, 1] += 10  # shift top side down
     boxes[:, 2] -= 10  # shift right side left
-    # boxes[:, 3] -= 5   # shift bottom side up
 
-    # Pick the best bounding box
+    # Select the best bounding box
     best_idx = np.argmax(scores)
     best_box = boxes[best_idx].astype(int)
     best_score = scores[best_idx]

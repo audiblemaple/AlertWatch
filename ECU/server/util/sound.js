@@ -12,9 +12,10 @@ const ffmpeg = require('fluent-ffmpeg');
 const {confirmationPhrases, noResponsePhrases} = require("./const");
 const {user_status, locks} = require("./global");
 const {printToConsole} = require("./util");
-const stemmer = natural.PorterStemmer; // Using Porter Stemmer
 
 const natural = require('natural');
+const stemmer = natural.PorterStemmer; // Using Porter Stemmer
+
 const tokenizer = new natural.WordTokenizer();
 
 /**
@@ -57,8 +58,11 @@ function unmuteAllStreams() {
 function playSound(filePath) {
     return new Promise((resolve, reject) => {
         // muteAllStreams();
-        const player = spawn('aplay', [filePath]);
-        // const player = spawn('aplay', ['-D', 'plughw:1,0', filePath]);
+            const player = null
+            if (process.env.OS === "ubuntu")
+                player = spawn('aplay', [filePath]);
+            else
+                player = spawn('aplay', ['-D', 'plughw:$(aplay -l | grep -i "usb audio" | grep -io "card [0-9]" | grep -o [0-9]),0', filePath]);
 
         player.on('error', (err) => {
             console.error(`Error playing sound: ${err.message}`);

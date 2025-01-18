@@ -1,6 +1,5 @@
 ibug_300W_large_face_landmark_dataset
 face_detection
-voice_recognition/temp_audio
 */output
 diagrams
 *.har
@@ -15,5 +14,6 @@ diagrams
 *.yaml
 *.npz
 *.hn
+Production.tar.gz
 *acceleras_full_flow*
 whisper.cpp

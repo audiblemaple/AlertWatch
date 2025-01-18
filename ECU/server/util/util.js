@@ -55,19 +55,19 @@ function getSystemData() {
     try {
         const cpuModel = execSync('lscpu | grep -i "model name" | awk -F: \'{print $2}\'').toString().trim();
         const memory = execSync('free -h').toString();
-        const hailoInfo = execSync('hailortcli fw-control identify').toString();
+//        const hailoInfo = execSync('hailortcli fw-control identify').toString();
 
         return {
             cpuModel: cpuModel,
             memory: parseMemoryData(memory),
-            hailoInfo: parseHailoData(hailoInfo)
+//            hailoInfo: parseHailoData(hailoInfo)
         };
     } catch (error) {
         console.error('Error gathering system data:', error);
         return {
             cpuModel: "Unknown",
             memory: {},
-            hailoInfo: {}
+//            hailoInfo: {}
         };
     }
 }
