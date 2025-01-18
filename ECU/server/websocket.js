@@ -15,7 +15,7 @@ const WebSocket = require("ws");
 const {playSound, askForUserConfirmation} = require("./util/sound");
 
 /** Import general utility functions */
-const {printToConsole, getSystemData} = require("./util/util");
+const {printToConsole, getSystemData, getRandomInt} = require("./util/util");
 
 /** Import car management functions */
 const {startSpeedBroadcast, decelerateCar, accelerateCar} = require("./util/carManager");
@@ -153,19 +153,12 @@ async function handleClientMessage(ws, message, wss) {
 
             case "manual_user_confirmation":
             case "accelerate":
-                printToConsole(msgData);
-                break;
-
-            case "decelerate":
-                printToConsole(msgData);
-                break;
-
-            case "cruise":
-                printToConsole(msgData);
+                if (getRandomInt(10) > 5) accelerateCar();
+                else decelerateCar();
                 break;
 
             case "alert": {
-                // 1. Check if alert messages are locked (simple semaphore logic)
+                // Check if alert messages are locked (simple semaphore logic)
                 if (locks.alert_lock) {
                     printToConsole("alert messages are locked");
                     return;
@@ -184,13 +177,13 @@ async function handleClientMessage(ws, message, wss) {
                         break;
 
                     case "Prolonged_eye_closure":
-                        // 3. If we’ve triggered a “medium alert” before, play attentionTest
-                        //    and loop until user responds or alert is escalated
+                        // If we’ve triggered a “medium alert” before, play attentionTest
+                        // and loop until user responds or alert is escalated
                         if (currentDriveObject.medium_alert_num > 0) {
                             await playSound(sounds.attentionTest);
 
                             try {
-                                // 3A. Wait for user confirmation in a loop
+                                // Wait for user confirmation in a loop
                                 while (true) {
                                     const isConfirmedAlert = await askForUserConfirmation();
 
@@ -213,7 +206,7 @@ async function handleClientMessage(ws, message, wss) {
                                         await playSound(sounds.failedToParse);
                                 }
 
-                                // 3B. If user never responded, escalate: play decelerateWarning
+                                // If user never responded, escalate: play decelerateWarning
                                 if (currentDriveObject.consecutive_alert_num >= 1) {
                                     printToConsole("debug 5");
                                     currentDriveObject.consecutive_alert_num = 0;
@@ -241,7 +234,7 @@ async function handleClientMessage(ws, message, wss) {
                             }
                             break; // End of "alert" logic when medium_alert_num > 0
                         }
-                            // 4. If this is the first time medium_alert_num = 0, just play "takeABreak"
+                            // If this is the first time medium_alert_num = 0, just play "takeABreak"
                         //    and increment the alert count
                         else {
                             await playSound(sounds.takeABreak);
