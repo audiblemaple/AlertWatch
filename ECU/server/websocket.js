@@ -224,11 +224,13 @@ async function handleClientMessage(ws, message, wss) {
                                         // TODO: find a way to interrupt this process (currently, manual confirmation should suffice)
                                         await playSound(sounds.decelerating);
                                         decelerateCar();
-                                        const count = 60;
+                                        const count = 120;
                                         let counter = 0;
-                                        while (carState.decelerating === true || counter <= count){
+                                        while (carState.decelerating === true){
+                                            if (counter > count)
+                                                break
                                             await playSound(sounds.beep);
-                                            await delay(500);
+//                                            await delay(100);
                                             counter++
                                         }
                                     }

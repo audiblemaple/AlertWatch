@@ -9,6 +9,8 @@ const path = require("path");
 const { spawn } = require('child_process');
 
 const ffmpeg = require('fluent-ffmpeg');
+const fs = require('fs');
+
 const {confirmationPhrases, noResponsePhrases} = require("./const");
 const {user_status, locks} = require("./global");
 const {printToConsole} = require("./util");
@@ -189,94 +191,133 @@ function parseWhisperOutput(rawOutput) {
   );
 }
 
+
 /**
- * Records audio using ffmpeg and saves it as a WAV file in 16kHz mono format.
- * @param {string} outputFilePath - Path to save the recorded WAV file.
- * @param {number} durationInSeconds - Duration to record in seconds.
- * @returns {Promise<void>}
+ * Validates that the output directory exists and is writable.
+ * @param {string} filePath - Path to the output file.
+ * @throws Will throw an error if the directory doesn't exist or isn't writable.
  */
-// function recordAudioWithFFmpeg(outputFilePath, durationInSeconds = 5) {
-//     return new Promise((resolve, reject) => {
-//
-//         ffmpeg()
-//             .input('default')
-//             .inputFormat('alsa')
-//             .audioFrequency(16000)
-//             .audioChannels(1)
-//             .audioCodec('pcm_s16le')
-//             .format('wav')
-//             .duration(durationInSeconds)
-//             .on('end', () => {
-//                 resolve();
-//             })
-//             .on('error', (err) => {
-//                 reject(err);
-//             })
-//             .save(outputFilePath);
-//     });
-// }
+function validateOutputDirectory(filePath) {
+    const dir = path.dirname(filePath);
+    if (!fs.existsSync(dir)) {
+        throw new Error(`Output directory does not exist: ${dir}`);
+    }
+    try {
+        fs.accessSync(dir, fs.constants.W_OK);
+    } catch (err) {
+        throw new Error(`No write permission for directory: ${dir}`);
+    }
+}
+
+/**
+ * Retrieves the ALSA device identifier for USB audio devices.
+ * @returns {Promise<string[]>} - Resolves with an array of device identifiers (e.g., ['hw:2,0']) or an empty array if none found.
+ */
+function getUSBAudioDevices() {
+    return new Promise((resolve, reject) => {
+        exec('arecord -l', (error, stdout, stderr) => {
+            if (error) {
+                console.error('Error executing arecord:', stderr);
+                return reject(new Error('Failed to list audio capture devices.'));
+            }
+
+            const devices = [];
+            const lines = stdout.split('\n');
+
+            lines.forEach(line => {
+                const usbAudioMatch = line.match(/card\s+(\d+):\s+.*USB.*device\s+(\d+):/i);
+                if (usbAudioMatch) {
+                    const card = usbAudioMatch[1];
+                    const device = usbAudioMatch[2];
+                    devices.push(`hw:${card},${device}`);
+                }
+            });
+
+            resolve(devices);
+        });
+    });
+}
+
+/**
+ * Selects the first available USB audio device.
+ * @returns {Promise<string>} - Resolves with the device identifier (e.g., 'hw:2,0') or rejects if none found.
+ */
+async function selectAudioDevice() {
+    const devices = await getUSBAudioDevices();
+    if (devices.length === 0) {
+        throw new Error('No USB audio capture devices found.');
+    }
+    return devices[0]; // Select the first device
+}
 
 
 /**
- * Records audio using ffmpeg and saves it as a WAV file in 16kHz mono format.
+ * Records audio using FFmpeg and saves it as a WAV file in 16kHz mono format.
+ * Automatically detects and selects the USB audio device.
  * @param {string} outputFilePath - Path to save the recorded WAV file.
  * @param {number} [durationInSeconds=5] - Duration to record in seconds.
- * @param {string} [audioDevice='default'] - ALSA audio device to use for recording.
  * @param {boolean} [verbose=false] - Enable verbose logging.
  * @returns {Promise<void>}
  */
-function recordAudioWithFFmpeg(outputFilePath, durationInSeconds = 5, audioDevice = 'plughw:2,0', verbose = false) {
-    return new Promise((resolve, reject) => {
-        // Validate outputFilePath
-        if (typeof outputFilePath !== 'string' || outputFilePath.trim() === '') {
-            return reject(new Error('Invalid output file path.'));
-        }
+async function recordAudioWithFFmpeg(outputFilePath, durationInSeconds = 5, verbose = false) {
+    try {
+        // Validate output directory
+        validateOutputDirectory(outputFilePath);
 
-        // Validate duration
-        if (typeof durationInSeconds !== 'number' || durationInSeconds <= 0) {
-            return reject(new Error('Duration must be a positive number.'));
-        }
+        // Select the audio device
+        const audioDevice = await selectAudioDevice();
 
-        // Initialize FFmpeg command
-        let command = ffmpeg()
-            .input(audioDevice)
-            .inputFormat('alsa')
-            .audioFrequency(16000) // 16kHz
-            .audioChannels(1)       // Mono
-            .audioCodec('pcm_s16le')// PCM 16-bit little endian
-            .format('wav')
-            .duration(durationInSeconds)
-            .save(outputFilePath);
-
-        // Enable verbose logging if requested
         if (verbose) {
-            command = command
-                .on('start', (cmdLine) => {
-                    console.log(`FFmpeg process started: ${cmdLine}`);
-                })
-                .on('progress', (progress) => {
-                    console.log(`Processing: ${progress.percent ? progress.percent.toFixed(2) : 0}% done`);
-                });
+            console.log(`Using USB Audio Device: ${audioDevice}`);
         }
 
-        // Handle process end
-        command.on('end', () => {
-            if (verbose) {
-                console.log('FFmpeg recording finished successfully.');
-            }
-            resolve();
-        });
+        return new Promise((resolve, reject) => {
+            // Initialize FFmpeg command
+            let command = ffmpeg()
+                .input(`plug${audioDevice}`)
+                .inputFormat('alsa')
+                .audioFrequency(16000)         // 16kHz
+                .audioChannels(1)              // Mono
+                .audioCodec('pcm_s16le')       // PCM 16-bit little endian
+                .format('wav')
+                .duration(durationInSeconds)
+                .save(outputFilePath);
 
-        // Handle errors
-        command.on('error', (err, stdout, stderr) => {
-            console.error('FFmpeg error:', err.message);
+            // Enable verbose logging if requested
             if (verbose) {
-                console.error('FFmpeg stdout:', stdout);
-                console.error('FFmpeg stderr:', stderr);
+                command = command
+                    .on('start', (cmdLine) => {
+                        console.log(`FFmpeg process started: ${cmdLine}`);
+                    })
+                    .on('progress', (progress) => {
+                        if (progress.percent) {
+                            console.log(`Processing: ${progress.percent.toFixed(2)}% done`);
+                        }
+                    });
             }
-            reject(new Error(`FFmpeg recording failed: ${err.message}`));
+
+            // Handle process end
+            command.on('end', () => {
+                if (verbose) {
+                    console.log('FFmpeg recording finished successfully.');
+                }
+                resolve();
+            });
+
+            // Handle errors
+            command.on('error', (err, stdout, stderr) => {
+                console.error('FFmpeg error:', err.message);
+                if (verbose) {
+                    console.error('FFmpeg stdout:', stdout);
+                    console.error('FFmpeg stderr:', stderr);
+                }
+                reject(new Error(`FFmpeg recording failed: ${err.message}`));
+            });
         });
-    });
+    } catch (error) {
+        console.error('Error in recordAudioWithFFmpeg:', error.message);
+        throw error; // Re-throw the error after logging
+    }
 }
 
 
