@@ -79,6 +79,8 @@ function sendWelcomeMessage(ws) {
 
     const systemData = getSystemData();
 
+    console.log(systemData);
+
     const welcomeMessage = {
         type: "welcome",
         gaugeConf: {

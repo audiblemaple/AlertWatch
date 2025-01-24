@@ -59,26 +59,83 @@ async function removeFile(path) {
  * Retrieves system data including CPU model, memory usage, and Hailo device information.
  * @returns {Object} System data containing CPU model, memory usage, and Hailo info.
  */
-function getSystemData() {
-    try {
-        const cpuModel = execSync('lscpu | grep -i "model name" | awk -F: \'{print $2}\'').toString().trim();
-        const memory = execSync('free -h').toString();
-//        const hailoInfo = execSync('hailortcli fw-control identify').toString();
+const os = require('os');
+// const { parseMemoryData, parseHailoData } = require('./some-other-file');
+// (If you have a custom parser, adapt it to parse from an object instead of text.)
 
-        return {
-            cpuModel: cpuModel,
-            memory: parseMemoryData(memory),
-//            hailoInfo: parseHailoData(hailoInfo)
-        };
-    } catch (error) {
-        console.error('Error gathering system data:', error);
-        return {
-            cpuModel: "Unknown",
-            memory: {},
-//            hailoInfo: {}
-        };
-    }
+function bytesToMB(bytes) {
+  return (bytes / 1024 / 1024).toFixed(2) + ' MB';
 }
+
+/**
+ * Gathers system data without shell commands (using `os` module).
+ * Returns an object with CPU, memory, and OS information.
+ */
+function getSystemData() {
+  try {
+    // Get info about each CPU core
+    const cpus = os.cpus();
+
+    // CPU model and speed (from first core, typically they share the same model and speed)
+    const cpuModel = cpus[0]?.model || 'Unknown CPU Model';
+    const cpuSpeed = cpus[0]?.speed || 0; // in MHz
+
+    // Number of cores
+    const numCores = cpus.length;
+
+    // Memory (in bytes)
+    const totalMemBytes = os.totalmem();
+    const freeMemBytes = os.freemem();
+
+    // Convert to MB
+    const totalMemMB = bytesToMB(totalMemBytes);
+    const freeMemMB = bytesToMB(freeMemBytes);
+
+    // OS details
+    const platform = os.platform();     // e.g. 'linux', 'win32', 'darwin'
+    const release = os.release();       // e.g. '5.15.0-56-generic'
+    const uptime = os.uptime();         // in seconds
+    const arch = os.arch();             // e.g. 'x64', 'arm', 'arm64'
+
+    return {
+      cpuModel: cpuModel,
+      cpuSpeedMHz: cpuSpeed,
+      cpuCores: numCores,
+      memory: {
+        total: totalMemMB,
+        free: freeMemMB
+      },
+      osInfo: {
+        platform: platform,
+        release: release,
+        uptimeSeconds: uptime,
+        arch: arch
+      }
+    };
+  } catch (error) {
+    console.error('Error gathering system data:', error);
+    return {
+      cpuModel: "Unknown",
+      cpuSpeedMHz: 0,
+      cpuCores: 0,
+      memory: {
+        total: "0 MB",
+        free: "0 MB"
+      },
+      osInfo: {
+        platform: "unknown",
+        release: "unknown",
+        uptimeSeconds: 0,
+        arch: "unknown"
+      }
+    };
+  }
+}
+
+module.exports = {
+  getSystemData
+};
+
 
 /**
  * Parses the raw output of Hailo device information into a structured object.
