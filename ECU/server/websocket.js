@@ -15,13 +15,13 @@ const WebSocket = require("ws");
 const {playSound, askForUserConfirmation} = require("./util/sound");
 
 /** Import general utility functions */
-const {printToConsole, getSystemData, getRandomInt, delay} = require("./util/util");
+const {printToConsole, getSystemData, delay} = require("./util/util");
 
 /** Import car management functions */
-const {startSpeedBroadcast, decelerateCar, accelerateCar} = require("./util/carManager");
+const {startSpeedBroadcast, setCarAccelerating, setCarDecelerating} = require("./util/carManager");
 
 /** Import drive log management functions */
-const {currentDriveObject, updateDriveDataLog} = require("./util/driveLogManager");
+const {currentDriveObject} = require("./util/driveLogManager");
 
 /** Import global variables */
 const {user_status, locks, sounds, carState} = require("./util/global");
@@ -153,8 +153,8 @@ async function handleClientMessage(ws, message, wss) {
 
             case "manual_user_confirmation":
             case "accelerate":
-                if (getRandomInt(10) > 5) accelerateCar();
-                else decelerateCar();
+                setCarDecelerating();
+                // setCarAccelerating();
                 break;
 
             case "alert": {
@@ -223,7 +223,7 @@ async function handleClientMessage(ws, message, wss) {
                                     } else {
                                         // TODO: find a way to interrupt this process (currently, manual confirmation should suffice)
                                         await playSound(sounds.decelerating);
-                                        decelerateCar();
+                                        setCarDecelerating();
                                         const count = 120;
                                         let counter = 0;
                                         while (carState.decelerating === true){
