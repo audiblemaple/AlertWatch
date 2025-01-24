@@ -151,73 +151,38 @@
 
 
   // -------------------------------------------
-  // wssn Socket (was: const wssn = new WebSocket('ws://192.168.0.252:8765/');)
+  // videoFeedWebSocket Socket (was: const videoFeedWebSocket = new WebSocket('ws://192.168.0.252:8765/');)
   // -------------------------------------------
 
-  let wssn = null;
+  let videoFeedWebSocket = null;
 
   function connectWssn() {
-      wssn = new WebSocket('ws://192.168.0.252:8765/');
+      videoFeedWebSocket = new WebSocket('ws://192.168.0.252:8765/');
 
-      wssn.onopen = () => {
-          console.log("Connected to wssn server (192.168.0.252:8765)");
+      videoFeedWebSocket.onopen = () => {
+          console.log("Connected to videoFeedWebSocket server (192.168.0.252:8765)");
       };
 
-      wssn.onmessage = (event) => {
+      videoFeedWebSocket.onmessage = (event) => {
           // event.data is the base64-encoded JPEG
           const base64Image = event.data;
           const imgElem = document.getElementById("video-frame");
           imgElem.src = "data:image/jpeg;base64," + base64Image;
       };
 
-      wssn.onclose = () => {
-          console.log("Disconnected from wssn server. Reconnecting in 3 seconds...");
+      videoFeedWebSocket.onclose = () => {
+          console.log("Disconnected from videoFeedWebSocket server. Reconnecting in 3 seconds...");
           setTimeout(connectWssn, 3000);
       };
 
-      wssn.onerror = (error) => {
-          console.error("WebSocket error (wssn):", error);
-          // wssn.close(); // Optionally close to trigger reconnect
+      videoFeedWebSocket.onerror = (error) => {
+          console.error("WebSocket error (videoFeedWebSocket):", error);
+          // videoFeedWebSocket.close(); // Optionally close to trigger reconnect
       };
   }
 
   // Call once on page load
   connectWssn();
-
-
-  // -------------------------------------------
-  // wssnn Socket (was: const wssnn = new WebSocket('ws://192.168.0.63:8765/'); )
-  // -------------------------------------------
-
-  let wssnn = null;
-
-  function connectWssnn() {
-      wssnn = new WebSocket('ws://192.168.0.63:8765/');
-
-      wssnn.onopen = () => {
-          console.log("Connected to wssnn server (192.168.0.63:8765)");
-      };
-
-      wssnn.onmessage = (event) => {
-          // event.data is the base64-encoded JPEG
-          const base64Image = event.data;
-          const imgElem = document.getElementById("videoFeed");
-          imgElem.src = "data:image/jpeg;base64," + base64Image;
-      };
-
-      wssnn.onclose = () => {
-          console.log("Disconnected from wssnn server. Reconnecting in 3 seconds...");
-          setTimeout(connectWssnn, 3000);
-      };
-
-      wssnn.onerror = (error) => {
-          console.error("WebSocket error (wssnn):", error);
-          // wssnn.close(); // Optionally close to trigger reconnect
-      };
-  }
-
-  // Call once on page load
-  connectWssnn();
 
 
 
@@ -369,36 +334,36 @@
 //
 //
 //
-// const wssn = new WebSocket('ws://192.168.0.252:8765/');  // Adjust host/port as needed
+// const videoFeedWebSocket = new WebSocket('ws://192.168.0.252:8765/');  // Adjust host/port as needed
 //
-// wssn.onopen = () => {
+// videoFeedWebSocket.onopen = () => {
 //     console.log("Connected to the WebSocket server");
 // };
 //
-// wssn.onmessage = (event) => {
+// videoFeedWebSocket.onmessage = (event) => {
 //     // event.data is the base64-encoded JPEG
 //     const base64Image = event.data;
 //     const imgElem = document.getElementById("video-frame");
 //     imgElem.src = "data:image/jpeg;base64," + base64Image;
 // };
 //
-// wssn.onclose = () => {
+// videoFeedWebSocket.onclose = () => {
 //     console.log("WebSocket connection closed");
 // };
 //
-// const wssnn = new WebSocket('ws://192.168.0.63:8765/');  // Adjust host/port as needed
+// const videoFeedWebsocket = new WebSocket('ws://192.168.0.63:8765/');  // Adjust host/port as needed
 //
-// wssnn.onopen = () => {
+// videoFeedWebsocket.onopen = () => {
 //     console.log("Connected to the WebSocket server");
 // };
 //
-// wssnn.onmessage = (event) => {
+// videoFeedWebsocket.onmessage = (event) => {
 //     // event.data is the base64-encoded JPEG
 //     const base64Image = event.data;
 //     const imgElem = document.getElementById("videoFeed");
 //     imgElem.src = "data:image/jpeg;base64," + base64Image;
 // };
 //
-// wssnn.onclose = () => {
+// videoFeedWebsocket.onclose = () => {
 //     console.log("WebSocket connection closed");
 // };
