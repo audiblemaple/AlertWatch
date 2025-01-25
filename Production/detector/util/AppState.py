@@ -32,6 +32,8 @@ from collections import deque
 import threading
 import time
 
+import cv2
+
 EAR_THRESHOLD = 0.20
 
 @dataclass
@@ -79,6 +81,12 @@ class AppState:
     blink_durations: list = field(default_factory=list)  # Stores duration of each blink
     is_blinking: bool = False         # Indicates if a blink is ongoing
     current_blink_start: float = 0.0  # Timestamp when the current blink started
+
+
+    start_time = time.time()
+    ear_values_baseline = []
+    baseline_ear = None
+
 
     # Analysis Parameters
     analysis_window: int = 20               # seconds (for blink rate + EAR over time)
@@ -191,15 +199,15 @@ class AppState:
             drowsy = True
             reason = "Prolonged_eye_closure"
 
-        # Condition #3: Low average EAR
+        # Condition #3: Low average EAR compared to the initial measurement
         # Only trigger if we've passed the cooldown time.
-        if average_ear < 0.20 and (now - self.last_ear_reset_time) > self.ear_reset_cooldown:
-            print(average_ear)
-            self.ear_measurements.clear()
-            self.ear_sum = 0.0  # reset running sum
-            self.last_ear_reset_time = now
-            drowsy = True
-            reason = "low_average_ear"
+        if self.baseline_ear is not None:
+            if ((self.baseline_ear - average_ear) / self.baseline_ear) > 0.25 and (now - self.last_ear_reset_time) > self.ear_reset_cooldown:
+                self.ear_measurements.clear()
+                self.ear_sum = 0.0  # reset running sum
+                self.last_ear_reset_time = now
+                drowsy = True
+                reason = "low_average_ear"
 
         return drowsy, reason
 

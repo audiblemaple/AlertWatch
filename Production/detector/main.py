@@ -157,6 +157,26 @@ def handle_faces(
         )
         state.add_ear_measurement(avg_EAR)
 
+        # Get first minute measurement for the EAR values
+        elapsed = time.time() - state.start_time
+        if elapsed < 5:
+            # Collect EAR data for baseline calculation
+            state.ear_values_baseline.append(avg_EAR)
+        else:
+            # If we haven't computed the baseline yet, do it now
+            if state.baseline_ear is None and len(state.ear_values_baseline) > 0:
+                state.baseline_ear = np.mean(state.ear_values_baseline)
+                print(f"Baseline EAR computed: {state.baseline_ear:.3f}")
+
+        # If baseline is ready, compare and display difference
+        if state.baseline_ear is not None:
+            ear_diff = avg_EAR - state.baseline_ear
+            cv2.putText(
+                frame, f"Diff from baseline: {ear_diff:.2f}",
+                (10, 100),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 1, cv2.LINE_AA
+            )
+
         # Display EAR
         cv2.putText(
             frame, f"EAR: {avg_EAR:.2f}", (10, 60),
