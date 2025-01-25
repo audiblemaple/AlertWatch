@@ -61,7 +61,7 @@ Author:
 License:
     MIT
 """
-
+import json
 import time
 import cv2
 import numpy as np
@@ -89,14 +89,15 @@ from prePostProcessing import (
 CLASS_NUM: int = 136 >> 1
 
 ''' Blink Detection Constants '''
-EAR_THRESHOLD: float = 0.25
-CONSEC_FRAMES: int = 2
+EAR_THRESHOLD: float = 0.20
+CONSEC_FRAMES: int = 3
+FRAMES_WITH_NO_FACE: int = 0
 
 ''' How much of the video time to save in the buffer '''
 BUFFER_DURATION: int = 30  # seconds
 
 ''' Frames to skip for face detection '''
-FRAMES_TO_SKIP: int = 4
+FRAMES_TO_SKIP: int = 2
 
 ''' The face to store when skipping frames '''
 FACES: int | None = None
@@ -179,7 +180,7 @@ def handle_faces(
     })
 
 """
-Detects faces in a video frame.
+Detects faces in a video frame.S
 
 Args:
     frame (ndarray): The current video frame.
@@ -224,8 +225,9 @@ def video_processing_loop(
 ):
     """Continually capture frames, run face detection/landmarks, and manage display."""
     global latest_frame
+    global FRAMES_WITH_NO_FACE
 
-    cap = init_cv_cap(640, 480, 70)
+    cap = init_cv_cap(640, 480, 60)
     if cap is None or not cap.isOpened():
         print("Error: Could not open camera.")
         return
@@ -266,7 +268,7 @@ def video_processing_loop(
         else:
             face = face_buff
 
-        # If no face detected, just show the frame or do nothing
+        # If no face detected
         if not face:
             with lock:
                 latest_frame = frame
@@ -332,8 +334,23 @@ async def send_frames(websocket):
             await websocket.send(b64_string)
 
         # Slight throttle to avoid saturating CPU
-        await asyncio.sleep(0.03)  # ~ 30 FPS
+        await asyncio.sleep(0.016)  # ~ 60 FPS
 
+
+def get_system_data():
+    """
+    Returns a dictionary containing platform, CPU, and memory data.
+    """
+    system_data = {
+        'platform': platform.system(),
+        'platform_release': platform.release(),
+        'architecture': platform.machine(),
+        'processor': platform.processor()
+        }
+
+    # Basic platform/OS info
+
+    return system_data
 
 """
 Handles incoming WebSocket connections and streams frames to the client.
@@ -342,9 +359,28 @@ Args:
     websocket (WebSocketServerProtocol): WebSocket connection object.
     path (str): The path of the WebSocket request.
 """
+# async def websocket_handler(websocket, path: str) -> None:q
+#     """Handle new WebSocket connection."""
+#     print("New client connected")
+#     try:
+#         await send_frames(websocket)
+#     except Exception as e:
+#         print(f"Client disconnected: {e}")
+
 async def websocket_handler(websocket, path: str) -> None:
     """Handle new WebSocket connection."""
     print("New client connected")
+
+    # 1. Gather system data
+    system_info = get_system_data()
+
+    # 2. Send system info as JSON with a 'type' field, so client can distinguish
+    await websocket.send(json.dumps({
+        "type": "welcome",
+        "systemData": system_info
+    }))
+
+    # 3. Now continuously send frames
     try:
         await send_frames(websocket)
     except Exception as e:

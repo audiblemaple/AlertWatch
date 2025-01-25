@@ -155,8 +155,8 @@ async function handleClientMessage(ws, message, wss) {
 
             case "manual_user_confirmation":
             case "accelerate":
-                setCarDecelerating();
-                // setCarAccelerating();
+//                setCarDecelerating();
+                 setCarAccelerating();
                 break;
 
             case "alert": {

@@ -1,189 +1,259 @@
-  let gauge = null;
-  let lastFrameTime = null;
-  let samples = 1;
-  let fpsAvg = 0;
+let gauge = null;
+let lastFrameTime = null;
+let samples = 1;
+let fpsAvg = 0;
 
-  function createGauge(gaugeConf){
-      if (!("tickList" in gaugeConf)) {
-          return 1;
-      }
-      if (!("redline" in gaugeConf)) {
-          return 1;
-      }
+function createGauge(gaugeConf) {
+    if (!("tickList" in gaugeConf)) {
+        return 1;
+    }
+    if (!("redline" in gaugeConf)) {
+        return 1;
+    }
 
-      // Speed Gauge
-      gauge = new RadialGauge({
-          renderTo: 'canvas-id',
-          width: 300,
-          height: 300,
-          units: "Km/h",
-          minValue: 0,
-          maxValue: 220,
-          majorTicks: gaugeConf.tickList,
-          minorTicks: 2,
-          strokeTicks: true,
-          highlights: [
-              {
-                  "from": gaugeConf.redline.minVal,
-                  "to": gaugeConf.redline.maxVal,
-                  "color": "rgba(200, 50, 50, .75)"
-              }
-          ],
-          colorPlate: "#fff",
-          borderShadowWidth: 0,
-          borders: false,
-          needleType: "arrow",
-          needleWidth: 2,
-          needleCircleSize: 7,
-          needleCircleOuter: true,
-          needleCircleInner: false,
-          animationDuration: 970,
-          animationRule: "linear"
-      }).draw();
-  }
+    // Speed Gauge
+    gauge = new RadialGauge({
+        renderTo: 'canvas-id',
+        width: 300,
+        height: 300,
+        units: "Km/h",
+        minValue: 0,
+        maxValue: 220,
+        majorTicks: gaugeConf.tickList,
+        minorTicks: 2,
+        strokeTicks: true,
+        highlights: [
+            {
+                "from": gaugeConf.redline.minVal,
+                "to": gaugeConf.redline.maxVal,
+                "color": "rgba(200, 50, 50, .75)"
+            }
+        ],
+        colorPlate: "#fff",
+        borderShadowWidth: 0,
+        borders: false,
+        needleType: "arrow",
+        needleWidth: 2,
+        needleCircleSize: 7,
+        needleCircleOuter: true,
+        needleCircleInner: false,
+        animationDuration: 970,
+        animationRule: "linear"
+    }).draw();
+}
 
-  // Dynamically update speed gauge value
-  function updateSpeed(speed) {
-      if (speed <= 0){
-          gauge.value = 0;
-          gauge.valueText = 0;
-          document.getElementById('speedValue').textContent = "0";
-      } else {
-          gauge.value = speed;
-          gauge.valueText = speed;
-          document.getElementById('speedValue').textContent = speed;
-      }
-  }
+// Dynamically update speed gauge value
+function updateSpeed(speed) {
+    if (speed <= 0) {
+        gauge.value = 0;
+        gauge.valueText = 0;
+        document.getElementById('speedValue').textContent = "0";
+    } else {
+        gauge.value = speed;
+        gauge.valueText = speed;
+        document.getElementById('speedValue').textContent = speed;
+    }
+}
 
-  // -------------------------------------------
-  // Main Socket (was: const socket = new WebSocket("ws://localhost:5000"); )
-  // -------------------------------------------
+// -------------------------------------------
+// Main Socket (was: const socket = new WebSocket("ws://localhost:5000"); )
+// -------------------------------------------
 
-  let socket = null;
+let socket = null;
 
-  function connectMainSocket() {
-      socket = new WebSocket("ws://localhost:5000");
+function connectMainSocket() {
+    socket = new WebSocket("ws://192.168.0.63:5000");
 
-      socket.onopen = () => {
-          console.log("Connected to WebSocket server (main).");
-      };
+    socket.onopen = () => {
+        console.log("Connected to WebSocket server (main).");
+    };
 
-      socket.onmessage = (event) => {
-          // Parse the JSON message received from the server
-          const data = JSON.parse(event.data);
-          const {type, msgData} = data;
+    socket.onmessage = (event) => {
+        // Parse the JSON message received from the server
+        const data = JSON.parse(event.data);
+        const {type, msgData} = data;
 
-          switch (type) {
-              case "welcome":
-                  const { gaugeConf, systemData } = data;
-                  const systemDataHTML = `
+        switch (type) {
+            case "welcome":
+                const {gaugeConf, systemData} = data;
+                const systemDataHTML = `
                       <strong>CPU Model:</strong> ${systemData.cpuModel || "Unknown"}<br>
+                      <strong>Cores:</strong> ${systemData.cpuCores || "Unknown"}<br><br>
                       <strong>Memory:</strong><br>
-                      - Total: ${systemData.memory?.total || "N/A"}<br>
+                      - Total: ${systemData.memory?.total || "N/A"}<br><br>
+                      <strong>OS Info:</strong><br>
+                      - Platform: ${systemData.osInfo.platform || "Unknown"}<br>
+                      - Release: ${systemData.osInfo.release || "Unknown"}<br>
+                      - Architecture: ${systemData.osInfo.arch || "Unknown"}<br>
                   `;
-                  document.getElementById("detection-unit-data").innerHTML = systemDataHTML;
-                  createGauge(gaugeConf);
-                  break;
+                document.getElementById("ECU-unit-data").innerHTML = systemDataHTML;
+                createGauge(gaugeConf);
+                break;
 
-              case "speed":
-                  updateSpeed(msgData);
-                  break;
+            case "speed":
+                updateSpeed(msgData);
+                break;
 
-              case "detection_feed":
-                  // Extract the frame and update the image
-                  const { frame } = msgData;
-                  const videoElement = document.getElementById('videoFeed');
-                  videoElement.src = `data:image/jpeg;base64,${frame}`;
+            case "detection_feed":
+                // Extract the frame and update the image
+                const {frame} = msgData;
+                const videoElement = document.getElementById('videoFeed');
+                videoElement.src = `data:image/jpeg;base64,${frame}`;
 
-                  // Calculate and display FPS
-                  const currentTime = performance.now();
-                  if (lastFrameTime) {
-                      const fps = 1000 / (currentTime - lastFrameTime);
-                      document.getElementById("fpsDisplay").textContent = `FPS: ${fps.toFixed(2)}`;
-                      fpsAvg += fps;
-                      document.getElementById("fpsDisplayAVG").textContent = `AVG. FPS: ${(fpsAvg / samples).toFixed(1)}`;
-                      samples++;
-                      if (fps < 25)
-                          document.getElementById("fpsDisplay").style.color = "red";
-                      else
-                          document.getElementById("fpsDisplay").style.color = "#00bf07";
-                  }
-                  lastFrameTime = currentTime;
-                  break;
+                // Calculate and display FPS
+                const currentTime = performance.now();
+                if (lastFrameTime) {
+                    const fps = 1000 / (currentTime - lastFrameTime);
+                    document.getElementById("fpsDisplay").textContent = `FPS: ${fps.toFixed(2)}`;
+                    fpsAvg += fps;
+                    document.getElementById("fpsDisplayAVG").textContent = `AVG. FPS: ${(fpsAvg / samples).toFixed(1)}`;
+                    samples++;
+                    if (fps < 25)
+                        document.getElementById("fpsDisplay").style.color = "red";
+                    else
+                        document.getElementById("fpsDisplay").style.color = "#00bf07";
+                }
+                lastFrameTime = currentTime;
+                break;
 
-              default:
-                  console.log("Unknown message type");
-                  break;
-          }
-      };
+            default:
+                console.log("Unknown message type");
+                break;
+        }
+    };
 
-      socket.onclose = () => {
-          console.log("Disconnected from WebSocket server (main). Reconnecting in 3 seconds...");
-          setTimeout(connectMainSocket, 3000); // Attempt to reconnect after 3s
-      };
+    socket.onclose = () => {
+        console.log("Disconnected from WebSocket server (main). Reconnecting in 3 seconds...");
+        setTimeout(connectMainSocket, 3000); // Attempt to reconnect after 3s
+    };
 
-      socket.onerror = (error) => {
-          console.error("WebSocket error (main):", error);
-          // We can optionally close to trigger onclose and reconnect
-          // socket.close();
-      };
-  }
+    socket.onerror = (error) => {
+        console.error("WebSocket error (main):", error);
+        // We can optionally close to trigger onclose and reconnect
+        // socket.close();
+    };
+}
 
-  // Call once on page load
-  connectMainSocket();
+// Call once on page load
+connectMainSocket();
 
-  // Send function
-  function sendWebSocketMessage(type) {
-      if (socket && socket.readyState === WebSocket.OPEN) {
-          const message = { type, msgData: "" };
-          socket.send(JSON.stringify(message));
-          console.log('Sent message:', message);
-      } else {
-          console.error('Main WebSocket is not open. Ready state:', socket?.readyState);
-      }
-  }
+// Send function
+function sendWebSocketMessage(type) {
+    if (socket && socket.readyState === WebSocket.OPEN) {
+        const message = {type, msgData: ""};
+        socket.send(JSON.stringify(message));
+        console.log('Sent message:', message);
+    } else {
+        console.error('Main WebSocket is not open. Ready state:', socket?.readyState);
+    }
+}
 
-  // Add click event to the button
-  document.getElementById('confirm').addEventListener('click', function () {
-      const messageType = 'manual_user_confirmation';
-      sendWebSocketMessage(messageType);
-  });
+// Add click event to the button
+document.getElementById('confirm').addEventListener('click', function () {
+    const messageType = 'manual_user_confirmation';
+    sendWebSocketMessage(messageType);
+});
 
 
-  // -------------------------------------------
-  // videoFeedWebSocket Socket (was: const videoFeedWebSocket = new WebSocket('ws://192.168.0.252:8765/');)
-  // -------------------------------------------
+// -------------------------------------------
+// videoFeedWebSocket Socket (was: const videoFeedWebSocket = new WebSocket('ws://192.168.0.252:8765/');)
+// -------------------------------------------
 
-  let videoFeedWebSocket = null;
+let videoFeedWebSocket = null;
+let flag = true;
 
-  function connectWssn() {
-      videoFeedWebSocket = new WebSocket('ws://192.168.0.252:8765/');
+// function connectWssn() {
+//     videoFeedWebSocket = new WebSocket('ws://192.168.0.63:8765/');
+//
+//     videoFeedWebSocket.onopen = () => {
+//         console.log("Connected to videoFeedWebSocket server (192.168.0.252:8765)");
+//     };
+//
+//     videoFeedWebSocket.onmessage = (event) => {
+//         // console.log(`Received message from ${event.data}`);
+//         // if (data.type === "welcome") {
+//         //     // console.log(event.data)
+//         //     document.getElementById("detection-unit-data").innerHTML = `
+//         //               <strong>Processor:</strong> ${event.data.systemData.processor || "Unknown"}<br><br>
+//         //               <strong>System:</strong> ${event.data.systemData.platform || "Unknown"}<br>
+//         //               <strong>Release:</strong> ${event.data.systemData.platform_release || "Unknown"}<br><br>
+//         //               <strong>Architecture:</strong> ${event.data.systemData.architecture || "Unknown"}<br><br>
+//         //           `;
+//         //     return;
+//         // }
+//         // console.log("Received message type", data);
+//         // event.data is the base64-encoded JPEG
+//         const base64Image = event.data;
+//         const imgElem = document.getElementById("video-frame");
+//         imgElem.src = "data:image/jpeg;base64," + base64Image;
+//     };
+//
+//     videoFeedWebSocket.onclose = () => {
+//         console.log("Disconnected from videoFeedWebSocket server. Reconnecting in 3 seconds...");
+//         setTimeout(connectWssn, 3000);
+//     };
+//
+//     videoFeedWebSocket.onerror = (error) => {
+//         console.error("WebSocket error (videoFeedWebSocket):", error);
+//         // videoFeedWebSocket.close(); // Optionally close to trigger reconnect
+//     };
+// }
 
-      videoFeedWebSocket.onopen = () => {
-          console.log("Connected to videoFeedWebSocket server (192.168.0.252:8765)");
-      };
+function connectWssn() {
+    // Create the WebSocket
+    videoFeedWebSocket = new WebSocket('ws://192.168.0.63:8765/');
 
-      videoFeedWebSocket.onmessage = (event) => {
-          // event.data is the base64-encoded JPEG
-          const base64Image = event.data;
-          const imgElem = document.getElementById("video-frame");
-          imgElem.src = "data:image/jpeg;base64," + base64Image;
-      };
+    videoFeedWebSocket.onopen = () => {
+        console.log("Connected to videoFeedWebSocket server (192.168.0.63:8765)");
+    };
 
-      videoFeedWebSocket.onclose = () => {
-          console.log("Disconnected from videoFeedWebSocket server. Reconnecting in 3 seconds...");
-          setTimeout(connectWssn, 3000);
-      };
+    videoFeedWebSocket.onmessage = (event) => {
+        // Log the raw string
+        // console.log("Received message from server:", event.data);
 
-      videoFeedWebSocket.onerror = (error) => {
-          console.error("WebSocket error (videoFeedWebSocket):", error);
-          // videoFeedWebSocket.close(); // Optionally close to trigger reconnect
-      };
-  }
+        let data;
+        try {
+            // Attempt to parse JSON
+            data = JSON.parse(event.data);
+        } catch (e) {
+            // If it fails, we assume it's a base64 image
+            data = null;
+        }
 
-  // Call once on page load
-  connectWssn();
+        // If we successfully parsed a JSON object with "type"
+        if (data && data.type === "welcome") {
+            // We have system data
+            // console.log("Received welcome (system) message:", data);
 
+            // Update your UI with system information
+            document.getElementById("detection-unit-data").innerHTML = `
+                <strong>Processor:</strong> ${data.systemData.processor || "Unknown"}<br><br>
+                <strong>System:</strong> ${data.systemData.platform || "Unknown"}<br>
+                <strong>Release:</strong> ${data.systemData.platform_release || "Unknown"}<br><br>
+                <strong>Architecture:</strong> ${data.systemData.architecture || "Unknown"}<br><br>
+            `;
+        } else {
+            // Otherwise, treat the event data as a base64-encoded JPEG
+            const base64Image = event.data;
+            const imgElem = document.getElementById("video-frame");
+            imgElem.src = "data:image/jpeg;base64," + base64Image;
+        }
+    };
+
+    videoFeedWebSocket.onclose = () => {
+        console.log("Disconnected from videoFeedWebSocket server. Reconnecting in 3 seconds...");
+        setTimeout(connectWssn, 3000);
+    };
+
+    videoFeedWebSocket.onerror = (error) => {
+        console.error("WebSocket error (videoFeedWebSocket):", error);
+        // videoFeedWebSocket.close(); // Optionally close to trigger reconnect
+    };
+}
+
+
+// Call once on page load
+connectWssn();
 
 
 // let gauge = null;

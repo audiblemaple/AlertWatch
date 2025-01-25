@@ -1,7 +1,7 @@
 /**
  * @file carSpeedManager.js
  * @description Manages car speed states and broadcasts updates to WebSocket clients.
- * @author Lior Jigalo
+ * @author ...
  * @license MIT
  */
 
@@ -9,43 +9,107 @@
 require("dotenv").config();
 
 /** Extract environment variables */
-const {maxSpeed, updateFreq} = process.env;
+const { maxSpeed = 120, updateFreq = 1 } = process.env;
 
 /** Import WebSocket library */
 const WebSocket = require("ws");
 
 /** Import constants and utility functions */
-const {units} = require("./const");
-const {carState} = require("./global");
-const {getRandomInt} = require("./util");
+const { units } = require("./const");
+// your getRandomInt function (or any other helper) would go here
+const { getRandomInt } = require("./util");
+const { carState } = require("./global");
+
 
 /** Current speed of the car, starting from 0 */
 let speed = 0;
 
 /**
- * Updates the car's speed based on its state.
+ * Resets the car state to all `false`, except the one you want to set.
+ * This helps avoid conflicting states (e.g. accelerating AND decelerating at the same time).
  */
-function updateSpeed() {
-    if (carState.accelerating)
-        accelerateCar();
-    if (carState.decelerating || speed >= 120)
-        decelerateCar();
-    if (carState.cruising     || speed >= 100)
-        cruiseDrive();
-    // if (carState.stopped)
-    //     console.log("car stopped"); // TODO: add logic of constant beeping
+function resetCarState() {
+    carState.accelerating = false;
+    carState.decelerating = false;
+    carState.cruising = false;
+    carState.stopped = false;
 }
 
 /**
- * Logs the current state of the car to the console.
+ * Sets car state to Accelerating.
  */
-function logStatus(){
-    console.log("accelerating: ", carState.accelerating)
-    console.log("decelerating: ", carState.decelerating)
-    console.log("stopped: "     , carState.stopped)
-    console.log("cruising: "        , carState.cruising)
-    console.log("speed: ", speed)
-    console.log("\n")
+function setCarAccelerating() {
+    resetCarState();
+    carState.accelerating = true;
+}
+
+/**
+ * Sets car state to Decelerating.
+ */
+function setCarDecelerating() {
+    resetCarState();
+    carState.decelerating = true;
+}
+
+/**
+ * Sets car state to Cruising.
+ */
+function setCarCruising() {
+    resetCarState();
+    carState.cruising = true;
+}
+
+/**
+ * Sets car state to Stopped.
+ */
+function setCarStopped() {
+    resetCarState();
+    carState.stopped = true;
+    speed = 0; // If stopping, ensure speed is 0
+}
+
+/**
+ * Updates the car's speed based on its current state.
+ * Only call this once per "tick" or interval in your main loop.
+ */
+function updateCarSpeed() {
+    if (carState.stopped)
+        // Speed is already forced to 0 when setCarStopped() is called.
+        return;
+
+    if (carState.accelerating) {
+        if (speed >= 100)
+            return setCarCruising();
+
+        // Accelerate in a random-ish way
+        const increment = Math.floor(9 * ((7 + getRandomInt(5)) / 10));
+        speed = Math.min(speed + increment, maxSpeed);
+    }
+
+    if (carState.decelerating) {
+        // Decelerate in a random-ish way
+        const decrement = Math.floor(9 * ((7 + getRandomInt(3)) / 10));
+        speed -= decrement;
+
+        // If we've hit 0 or below, consider that "stopped"
+        if (speed <= 0)
+            setCarStopped(); // sets speed = 0 and flips to stopped state
+    }
+
+    if (carState.cruising) {
+        if (speed <= 60)
+            return setCarStopped();
+
+        // "Cruise" by randomly adjusting speed up/down a small amount
+        // The idea is that cruising won't drastically change speed
+        if (getRandomInt(120) >= 50) {
+            // Slight speed increase
+            speed = Math.min(speed + getRandomInt(3), maxSpeed);
+        } else {
+            // Slight speed decrease
+            speed = Math.max(speed - getRandomInt(5), 0);
+        }
+    }
 }
 
 /**
@@ -54,8 +118,8 @@ function logStatus(){
  */
 function startSpeedBroadcast(wss) {
     setInterval(() => {
-        updateSpeed();
-        // logStatus();
+        // Update speed exactly once per loop
+        updateCarSpeed();
         broadcastSpeed(wss, speed);
     }, updateFreq * units.second);
 }
@@ -66,13 +130,12 @@ function startSpeedBroadcast(wss) {
  * @param {number} speed - The current speed of the car.
  */
 function broadcastSpeed(wss, speed) {
-    if (carState.stopped)
-        return;
 
     const message = JSON.stringify({
         type: "speed",
-        msgData: speed
+        msgData: speed,
     });
+
     wss.clients.forEach((client) => {
         if (client.readyState === WebSocket.OPEN) {
             client.send(message);
@@ -80,51 +143,11 @@ function broadcastSpeed(wss, speed) {
     });
 }
 
-/**
- * Accelerates the car and updates its state.
- */
-function accelerateCar(){
-    carState.accelerating = true;
-    carState.decelerating = false;
-    carState.stopped      = false;
-    carState.cruising     = false;
-    speed += Math.floor(9 * ((7 + getRandomInt(5)) / 10));
-}
-
-/**
- * Decelerates the car and updates its state.
- */
-function decelerateCar(){
-    carState.accelerating = false;
-    carState.decelerating = true;
-    carState.stopped      = false;
-    carState.cruising       = false;
-    if (speed <= 0){
-        carState.stopped = true;
-        carState.decelerating = false;
-        speed = 0;
-        return
-    }
-    speed += Math.floor(-9 * ((7 + getRandomInt(3)) / 10));
-}
-
-/**
- * Sets the car to cruise mode and updates its state.
- */
-function cruiseDrive(){
-    carState.accelerating = false;
-    carState.decelerating = false;
-    carState.stopped      = false;
-    carState.cruising       = true;
-
-    getRandomInt(101) >= 50 ? speed += getRandomInt(5) :  speed -= getRandomInt(3);
-}
-
-/** Export functions */
+/** Export functions so other modules can control the car's state and start the loop */
 module.exports = {
+    // state setters
+    setCarAccelerating,
+    setCarDecelerating,
     startSpeedBroadcast,
     maxSpeed,
-    accelerateCar,
-    decelerateCar,
-    cruiseDrive,
 };

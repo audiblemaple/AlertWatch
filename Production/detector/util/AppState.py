@@ -32,7 +32,7 @@ from collections import deque
 import threading
 import time
 
-EAR_THRESHOLD = 0.25
+EAR_THRESHOLD = 0.20
 
 @dataclass
 class AppState:
@@ -82,8 +82,8 @@ class AppState:
 
     # Analysis Parameters
     analysis_window: int = 20               # seconds (for blink rate + EAR over time)
-    blink_rate_threshold: float = 90.0      # blinks per minute
-    prolonged_EAR_duration_threshold: float = 1  # seconds
+    blink_rate_threshold: float = 100.0      # blinks per minute
+    prolonged_EAR_duration_threshold: float = 1.1  # seconds
 
     # Timestamps of blinks for rate calculation
     blink_timestamps: deque = field(default_factory=lambda: deque())
@@ -193,7 +193,8 @@ class AppState:
 
         # Condition #3: Low average EAR
         # Only trigger if we've passed the cooldown time.
-        if average_ear < 0.29 and (now - self.last_ear_reset_time) > self.ear_reset_cooldown:
+        if average_ear < 0.20 and (now - self.last_ear_reset_time) > self.ear_reset_cooldown:
+            print(average_ear)
             self.ear_measurements.clear()
             self.ear_sum = 0.0  # reset running sum
             self.last_ear_reset_time = now

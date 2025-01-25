@@ -329,7 +329,7 @@ async function recordAudioWithFFmpeg(outputFilePath, durationInSeconds = 5, verb
 async function askForUserConfirmation() {
     const userAudioPath = path.join(__dirname, "../assets/sounds", "userCollected.wav");
     // Record audio using ffmpeg
-    await recordAudioWithFFmpeg(userAudioPath, 4);
+    await recordAudioWithFFmpeg(userAudioPath, 3);
     // Get output from whisper-cli
     const rawOutput = await transcribeWithWhisper(userAudioPath);
     // Parse timestamps

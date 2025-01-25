@@ -276,8 +276,14 @@ def postprocess_faces(outputs, pad_w, pad_h, score_threshold=0.67, nms_threshold
     boxes[:, 3] -= pad_h
 
     # Adjust box position
-    boxes[:, 0] -= 15
+    # boxes[:, 0] -= 15
     boxes[:, 2] -= 7  # shift right side left
+
+    # boxes[:, 0] += 10
+    # # boxes[:, 1] -= 10
+    # boxes[:, 2] -= 15  # shift right side left
+    # boxes[:, 3] -= 10
+
 
     # Select the best bounding box
     best_idx = np.argmax(scores)

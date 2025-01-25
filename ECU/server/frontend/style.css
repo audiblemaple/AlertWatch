@@ -149,3 +149,7 @@ p {
     margin: 0;
     font-size: 12px;
 }
+
+#Detection-unit-container, #ECU-unit-container{
+    justify-content: left;
+}
