@@ -120,12 +120,19 @@ def display_fps(frame, fps, avg_fps) -> None:
         avg_fps (float): Average frames per second.
     """
     timestamp = datetime.datetime.now()
-    cv2.putText(frame, f"FPS: {fps:.2f}", (10, 30),
-                cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
-    cv2.putText(frame, f"Avg FPS: {avg_fps:.2f}", (220, 30),
-                cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 0), 2, cv2.LINE_AA)
-    cv2.putText(frame, f"timestamp: {timestamp.strftime('%Y-%m-%d_%H-%M-%S')}", (10, 470),
-                cv2.FONT_HERSHEY_SIMPLEX, 1, (100, 250, 100), 2, cv2.LINE_AA)
+    # cv2.putText(frame, f"FPS: {fps:.2f}", (10, 30),
+    #             cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+    # cv2.putText(frame, f"Avg FPS: {avg_fps:.2f}", (220, 30),
+    #             cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 0), 2, cv2.LINE_AA)
+    # cv2.putText(frame, f"timestamp: {timestamp.strftime('%Y-%m-%d_%H-%M-%S')}", (10, 470),
+    #             cv2.FONT_HERSHEY_SIMPLEX, 1, (100, 250, 100), 2, cv2.LINE_AA)
+
+
+    cv2.putText(frame, f"FPS / AVG FPS: {fps:.2f} / {avg_fps:.2f}", (10, 25),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 1, cv2.LINE_AA)
+    cv2.putText(frame, f"Timestamp: {timestamp.strftime('%S-%M_%H-%d-%m-%Y')}", (10, 470),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 1, cv2.LINE_AA)
+
 
 def display_blink_info(frame, blink_count, total_blinks, blink_durations) -> None:
     """
@@ -139,10 +146,10 @@ def display_blink_info(frame, blink_count, total_blinks, blink_durations) -> Non
     """
     cv2.putText(frame, f"Blinks: {blink_count}", (10, 400),
                 cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
-    cv2.putText(frame, f"Total Blinks: {total_blinks}", (10, 435),
+    cv2.putText(frame, f"Total Blinks: {total_blinks}", (10, 440),
                 cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2, cv2.LINE_AA)
 
     if blink_durations:
         average_duration = sum(blink_durations) / len(blink_durations)
-        cv2.putText(frame, f"Avg Blink Dur: {average_duration:.2f}s", (280, 380),
+        cv2.putText(frame, f"Avg Blink Dur: {average_duration:.2f}s", (280, 440),
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 255), 2, cv2.LINE_AA)

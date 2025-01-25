@@ -280,7 +280,7 @@ def postprocess_faces(outputs, pad_w, pad_h, score_threshold=0.67, nms_threshold
     boxes[:, 2] -= 7  # shift right side left
 
     # boxes[:, 0] += 10
-    # # boxes[:, 1] -= 10
+    # boxes[:, 1] -= 10
     # boxes[:, 2] -= 15  # shift right side left
     # boxes[:, 3] -= 10
 

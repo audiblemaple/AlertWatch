@@ -125,6 +125,7 @@ def handle_faces(
     faces, frame, hailo_inference, face_land_output_name,
     face_landmarks_input_shape, all_landmarks, state: AppState, tensors
 ) -> None:
+    global EAR_THRESHOLD
     """Handle detected faces: run landmark inference, blink, drowsiness detection."""
     x1, y1, x2, y2, score = faces[0]
     draw_bounding_box(frame, score, (x1, y1), (x2, y2))
@@ -159,13 +160,15 @@ def handle_faces(
 
         # Get first minute measurement for the EAR values
         elapsed = time.time() - state.start_time
-        if elapsed < 5:
+        if elapsed < 90:
             # Collect EAR data for baseline calculation
             state.ear_values_baseline.append(avg_EAR)
         else:
             # If we haven't computed the baseline yet, do it now
             if state.baseline_ear is None and len(state.ear_values_baseline) > 0:
                 state.baseline_ear = np.mean(state.ear_values_baseline)
+                state.EAR_THRESHOLD = state.baseline_ear * 0.58
+                EAR_THRESHOLD = state.baseline_ear * 0.58
                 print(f"Baseline EAR computed: {state.baseline_ear:.3f}")
 
         # If baseline is ready, compare and display difference
@@ -173,14 +176,22 @@ def handle_faces(
             ear_diff = avg_EAR - state.baseline_ear
             cv2.putText(
                 frame, f"Diff from baseline: {ear_diff:.2f}",
-                (10, 100),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 1, cv2.LINE_AA
+                (10, 75),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 1, cv2.LINE_AA
             )
 
         # Display EAR
+        baseline_display = f"{state.baseline_ear:.2f}" if state.baseline_ear is not None else "N/A"
+
         cv2.putText(
-            frame, f"EAR: {avg_EAR:.2f}", (10, 60),
-            cv2.FONT_HERSHEY_SIMPLEX, 1, (100, 250, 100), 2, cv2.LINE_AA
+            frame,
+            f"EAR / Baseline EAR: {avg_EAR:.2f} / {baseline_display}",
+            (10, 50),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.7,  # font scale
+            (100, 250, 100),  # color
+            1,  # thickness
+            cv2.LINE_AA
         )
 
         # Drowsiness Detection

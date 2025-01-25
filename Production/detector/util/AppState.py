@@ -34,8 +34,6 @@ import time
 
 import cv2
 
-EAR_THRESHOLD = 0.20
-
 @dataclass
 class AppState:
     """
@@ -72,6 +70,7 @@ class AppState:
          ear_reset_cooldown (float): Cooldown duration for resetting EAR measurements.
          avg_ear_threshold (float): Threshold for average EAR indicating drowsiness.
      """
+    EAR_THRESHOLD = 0.20
     blink_counter: int = 0
     total_blinks: int = 0
     EAR_consec_frames: int = 0
@@ -89,7 +88,7 @@ class AppState:
 
 
     # Analysis Parameters
-    analysis_window: int = 20               # seconds (for blink rate + EAR over time)
+    analysis_window: int = 40               # seconds (for blink rate + EAR over time)
     blink_rate_threshold: float = 100.0      # blinks per minute
     prolonged_EAR_duration_threshold: float = 1.1  # seconds
 
@@ -134,7 +133,7 @@ class AppState:
         Checks if the eye aspect ratio has been continuously below EAR_THRESHOLD
         for longer than 'prolonged_EAR_duration_threshold' seconds.
         """
-        if current_EAR < EAR_THRESHOLD:
+        if current_EAR < self.EAR_THRESHOLD:
             elapsed = time.time() - ear_start_time
             return elapsed > self.prolonged_EAR_duration_threshold
         return False
@@ -202,8 +201,9 @@ class AppState:
         # Condition #3: Low average EAR compared to the initial measurement
         # Only trigger if we've passed the cooldown time.
         if self.baseline_ear is not None:
-            if ((self.baseline_ear - average_ear) / self.baseline_ear) > 0.25 and (now - self.last_ear_reset_time) > self.ear_reset_cooldown:
+            if ((self.baseline_ear - average_ear) / self.baseline_ear) > 0.7 and (now - self.last_ear_reset_time) > self.ear_reset_cooldown:
                 self.ear_measurements.clear()
+                print(((self.baseline_ear - average_ear) / self.baseline_ear))
                 self.ear_sum = 0.0  # reset running sum
                 self.last_ear_reset_time = now
                 drowsy = True
