@@ -43,38 +43,36 @@ const videoBuffer = []; // Circular buffer for storing frames
 /** Holds data from the detection unit*/
 let detectionUnitData = undefined;
 
+let videoFeedWebSocket;
 
 function connectVideoFeedWebSocket() {
-    videoFeedWebSocket = new WebSocket("ws://192.168.0.63:8765/");
+    videoFeedWebSocket = new WebSocket("ws://localhost:8765/");
 
     videoFeedWebSocket.onopen = () => {
-        console.log("Connected to video feed WebSocket server (192.168.0.63:8765)");
+        console.log("Connected to video feed WebSocket server (localhost:8765)");
     };
 
     videoFeedWebSocket.onmessage = (event) => {
         let data;
         try {
-            data = JSON.parse(event.data);
+            data = event.data;
         } catch (e) {
-            console.error("Error parsing JSON:", e);
+            console.error("Error receiving frame", e);
             return;
         }
 
-        if (data && data.type === "detection_feed") {
-            const base64Image = data.msgData;
-
-            // Store the latest frames (FIFO buffer)
-            if (videoBuffer.length >= VIDEO_BUFFER_LIMIT) {
-                videoBuffer.shift(); // Remove oldest frame if buffer is full
-            }
-            videoBuffer.push(base64Image);
+        // Store the latest frames (FIFO buffer)
+        if (videoBuffer.length >= VIDEO_BUFFER_LIMIT) {
+            videoBuffer.shift(); // Remove oldest frame if buffer is full
         }
+        videoBuffer.push(data);
+
     };
 
     videoFeedWebSocket.onclose = () => {
         console.log("Disconnected from video feed WebSocket server. Reconnecting in 3 seconds...");
         setTimeout(() => {
-            videoFeedWebSocket = new WebSocket("ws://192.168.0.63:8765/");
+            videoFeedWebSocket = new WebSocket("ws://localhost:8765/");
         }, 3000);
     };
 
@@ -105,14 +103,15 @@ function saveVideo(filename = "saved_video.mp4") {
 
     // Save frames as temporary images
     videoBuffer.forEach((frame, index) => {
-        const filePath = path.join(tempFramesDir, `frame-${String(index).padStart(5, "0")}.jpg`);
+        console.log(frame)
+        const filePath = join(tempFramesDir, `frame-${String(index).padStart(5, "0")}.jpg`);
         const imageData = frame.split(",")[1]; // Remove "data:image/jpeg;base64,"
         writeFileSync(filePath, Buffer.from(imageData, "base64"));
     });
 
     // Encode images to video using ffmpeg
     ffmpeg()
-        .input(path.join(tempFramesDir, "frame-%05d.jpg"))
+        .input(join(tempFramesDir, "frame-%05d.jpg"))
         .inputFPS(30)
         .output(outputPath)
         .videoCodec("libx264")
@@ -244,6 +243,7 @@ async function handleClientMessage(ws, message, wss) {
 
             case "manual_user_confirmation":
             case "accelerate":
+                saveVideo();
 //                setCarDecelerating();
                  setCarAccelerating();
                 break;

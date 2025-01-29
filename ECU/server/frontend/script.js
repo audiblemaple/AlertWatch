@@ -62,7 +62,8 @@ function updateSpeed(speed) {
 let socket = null;
 
 function connectMainSocket() {
-    socket = new WebSocket("ws://192.168.0.63:5000");
+    socket = new WebSocket("ws://localhost:5000");
+    // socket = new WebSocket("ws://192.168.0.63:5000");
 
     socket.onopen = () => {
         console.log("Connected to WebSocket server (main).");
@@ -214,7 +215,7 @@ function connectWssn() {
 
 
 // Call once on page load
-connectWssn();
+// connectWssn();
 
 
 // let gauge = null;
