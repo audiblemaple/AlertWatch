@@ -5,32 +5,21 @@
 
 const WebSocket = require("ws");
 
-// 1. Mock or set environment variables
-process.env.maxSpeed = "180";
-process.env.updateFreq = "0.1"; // a tenth of a second for quicker tests
-
-// 2. Mock or set your const and global modules as needed
-jest.mock("../../util/const", () => ({
-  units: {
-    second: 1, // so updateFreq * 1 = 0.1s
-  },
-}));
-
-// 3. Import the real code under test
+// Import the real code under test
 const {
-  startSpeedBroadcast,
-  accelerateCar,
-  decelerateCar,
-  cruiseDrive,
+  setCarAccelerating,
+  setCarDecelerating,
+  setCarCruising,
+  setCarStopped,
+  updateCarSpeed,
 } = require("../../util/carManager");
 
-// 4. Also import your global carState
 const { carState } = require("../../util/global");
 
-// 5. Use Fake Timers so we can control setInterval
+// Fake Timers to control setInterval
 describe("carManager.js", () => {
   let mockWss;
-  let intervalId; // We'll store the returned ID so we can clear it
+  let intervalId;
 
   beforeAll(() => {
     jest.useFakeTimers();
@@ -67,11 +56,11 @@ describe("carManager.js", () => {
   });
 
   // ---------------------------------------------------------------------------
-  // accelerateCar
+  // setCarAccelerating
   // ---------------------------------------------------------------------------
-  describe("accelerateCar()", () => {
-    it("should set carState to accelerating and increase speed", () => {
-      accelerateCar();
+  describe("setCarAccelerating()", () => {
+    it("should set carState to accelerating and clear other states", () => {
+      setCarAccelerating();
       expect(carState.accelerating).toBe(true);
       expect(carState.decelerating).toBe(false);
       expect(carState.stopped).toBe(false);
@@ -80,34 +69,56 @@ describe("carManager.js", () => {
   });
 
   // ---------------------------------------------------------------------------
-  // decelerateCar
+  // setCarDecelerating
   // ---------------------------------------------------------------------------
-  describe("decelerateCar()", () => {
-    it("should set carState to decelerating if speed > 0, or stopped if speed <= 0", () => {
-      accelerateCar(); // speed > 0
-      decelerateCar();
+  describe("setCarDecelerating()", () => {
+    it("should set carState to decelerating and clear other states", () => {
+      setCarDecelerating();
       expect(carState.decelerating).toBe(true);
-
-      // Keep decelerating until it's stopped
-      for (let i = 0; i < 20; i++) {
-        decelerateCar();
-        if (carState.stopped) break;
-      }
-      expect(carState.stopped).toBe(true);
-      expect(carState.decelerating).toBe(false);
+      expect(carState.accelerating).toBe(false);
+      expect(carState.stopped).toBe(false);
+      expect(carState.cruising).toBe(false);
     });
   });
 
   // ---------------------------------------------------------------------------
-  // cruiseDrive
+  // setCarCruising
   // ---------------------------------------------------------------------------
-  describe("cruiseDrive()", () => {
-    it("should set carState to cruising", () => {
-      cruiseDrive();
+  describe("setCarCruising()", () => {
+    it("should set carState to cruising and clear other states", () => {
+      setCarCruising();
       expect(carState.cruising).toBe(true);
       expect(carState.accelerating).toBe(false);
       expect(carState.decelerating).toBe(false);
       expect(carState.stopped).toBe(false);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // setCarStopped
+  // ---------------------------------------------------------------------------
+  describe("setCarStopped()", () => {
+    it("should set carState to stopped and speed to 0", () => {
+      setCarStopped();
+      expect(carState.stopped).toBe(true);
+      expect(carState.accelerating).toBe(false);
+      expect(carState.decelerating).toBe(false);
+      expect(carState.cruising).toBe(false);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // updateCarSpeed
+  // ---------------------------------------------------------------------------
+  describe("updateCarSpeed()", () => {
+    it("should update the speed based on car state", () => {
+      setCarAccelerating();
+      updateCarSpeed();
+      expect(carState.accelerating).toBe(true);
+
+      setCarDecelerating();
+      updateCarSpeed();
+      expect(carState.decelerating).toBe(true);
     });
   });
 });

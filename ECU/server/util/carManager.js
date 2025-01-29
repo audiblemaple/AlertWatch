@@ -146,6 +146,9 @@ function broadcastSpeed(wss, speed) {
 /** Export functions so other modules can control the car's state and start the loop */
 module.exports = {
     // state setters
+    updateCarSpeed,
+    setCarCruising,
+    setCarStopped,
     setCarAccelerating,
     setCarDecelerating,
     startSpeedBroadcast,
