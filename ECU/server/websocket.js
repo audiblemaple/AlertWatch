@@ -23,9 +23,16 @@ const {startSpeedBroadcast, setCarAccelerating, setCarDecelerating} = require(".
 /** Import drive log management functions */
 const {currentDriveObject} = require("./util/driveLogManager");
 
+/** Import ffmpeg for video creation */
+const ffmpeg = require("fluent-ffmpeg");
+
 /** Import global variables */
 const {user_status, locks, sounds, carState} = require("./util/global");
+const {existsSync, mkdirSync, rmSync, writeFileSync} = require("fs");
+const {join} = require("path");
 
+const VIDEO_BUFFER_LIMIT = 30 * 30; // 30 seconds * 30 FPS
+const videoBuffer = []; // Circular buffer for storing frames
 /**
  * @typedef {object} MessageData
  * @property {string} type - Type of the message.
@@ -35,6 +42,90 @@ const {user_status, locks, sounds, carState} = require("./util/global");
 /** @type {undefined | object} */
 /** Holds data from the detection unit*/
 let detectionUnitData = undefined;
+
+
+function connectVideoFeedWebSocket() {
+    videoFeedWebSocket = new WebSocket("ws://192.168.0.63:8765/");
+
+    videoFeedWebSocket.onopen = () => {
+        console.log("Connected to video feed WebSocket server (192.168.0.63:8765)");
+    };
+
+    videoFeedWebSocket.onmessage = (event) => {
+        let data;
+        try {
+            data = JSON.parse(event.data);
+        } catch (e) {
+            console.error("Error parsing JSON:", e);
+            return;
+        }
+
+        if (data && data.type === "detection_feed") {
+            const base64Image = data.msgData;
+
+            // Store the latest frames (FIFO buffer)
+            if (videoBuffer.length >= VIDEO_BUFFER_LIMIT) {
+                videoBuffer.shift(); // Remove oldest frame if buffer is full
+            }
+            videoBuffer.push(base64Image);
+        }
+    };
+
+    videoFeedWebSocket.onclose = () => {
+        console.log("Disconnected from video feed WebSocket server. Reconnecting in 3 seconds...");
+        setTimeout(() => {
+            videoFeedWebSocket = new WebSocket("ws://192.168.0.63:8765/");
+        }, 3000);
+    };
+
+    videoFeedWebSocket.onerror = (error) => {
+        console.error("WebSocket error (video feed):", error);
+    };
+}
+
+/**
+ * Save the last 30 seconds of video frames to an MP4 file.
+ */
+function saveVideo(filename = "saved_video.mp4") {
+    if (videoBuffer.length === 0) {
+        console.log("No frames to save!");
+        return;
+    }
+
+    console.log(`Saving ${videoBuffer.length} frames to ${filename}...`);
+
+    // Define output directory and file path
+    const outputPath = join(__dirname, filename);
+    const tempFramesDir = join(__dirname, "temp_frames");
+
+    // Ensure the temp directory exists
+    if (!existsSync(tempFramesDir)) {
+        mkdirSync(tempFramesDir);
+    }
+
+    // Save frames as temporary images
+    videoBuffer.forEach((frame, index) => {
+        const filePath = path.join(tempFramesDir, `frame-${String(index).padStart(5, "0")}.jpg`);
+        const imageData = frame.split(",")[1]; // Remove "data:image/jpeg;base64,"
+        writeFileSync(filePath, Buffer.from(imageData, "base64"));
+    });
+
+    // Encode images to video using ffmpeg
+    ffmpeg()
+        .input(path.join(tempFramesDir, "frame-%05d.jpg"))
+        .inputFPS(30)
+        .output(outputPath)
+        .videoCodec("libx264")
+        .on("end", () => {
+            console.log(`Video saved as ${filename}`);
+            // Cleanup temporary images
+            rmSync(tempFramesDir, { recursive: true, force: true });
+        })
+        .on("error", (err) => {
+            console.error("Error saving video:", err);
+        })
+        .run();
+}
 
 /**
  * @function initWebSocket
@@ -272,4 +363,4 @@ async function handleClientMessage(ws, message, wss) {
 }
 
 /** Export WebSocket functions */
-module.exports = {initWebSocket, broadcast};
+module.exports = {initWebSocket, broadcast, connectVideoFeedWebSocket};

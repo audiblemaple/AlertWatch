@@ -24,7 +24,7 @@ const {PORT, IP} = process.env;
 const {} = require("./util/driveLogManager");
 
 /** Import WebSocket initialization function */
-const { initWebSocket } = require("./websocket");
+const { initWebSocket, connectVideoFeedWebSocket} = require("./websocket");
 
 /** Import Express framework */
 const express = require("express");
@@ -68,6 +68,11 @@ const startApp = () => {
      * @param {object} server - The HTTP server instance to attach WebSocket.
      */
     initWebSocket(server);
+
+    /**
+     * Initialize WebSocket server that receives video feed.
+     */
+    connectVideoFeedWebSocket();
 };
 
 // Start the application

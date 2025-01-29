@@ -160,48 +160,11 @@ document.getElementById('confirm').addEventListener('click', function () {
 // -------------------------------------------
 
 let videoFeedWebSocket = null;
-let flag = true;
-
-// function connectWssn() {
-//     videoFeedWebSocket = new WebSocket('ws://192.168.0.63:8765/');
-//
-//     videoFeedWebSocket.onopen = () => {
-//         console.log("Connected to videoFeedWebSocket server (192.168.0.252:8765)");
-//     };
-//
-//     videoFeedWebSocket.onmessage = (event) => {
-//         // console.log(`Received message from ${event.data}`);
-//         // if (data.type === "welcome") {
-//         //     // console.log(event.data)
-//         //     document.getElementById("detection-unit-data").innerHTML = `
-//         //               <strong>Processor:</strong> ${event.data.systemData.processor || "Unknown"}<br><br>
-//         //               <strong>System:</strong> ${event.data.systemData.platform || "Unknown"}<br>
-//         //               <strong>Release:</strong> ${event.data.systemData.platform_release || "Unknown"}<br><br>
-//         //               <strong>Architecture:</strong> ${event.data.systemData.architecture || "Unknown"}<br><br>
-//         //           `;
-//         //     return;
-//         // }
-//         // console.log("Received message type", data);
-//         // event.data is the base64-encoded JPEG
-//         const base64Image = event.data;
-//         const imgElem = document.getElementById("video-frame");
-//         imgElem.src = "data:image/jpeg;base64," + base64Image;
-//     };
-//
-//     videoFeedWebSocket.onclose = () => {
-//         console.log("Disconnected from videoFeedWebSocket server. Reconnecting in 3 seconds...");
-//         setTimeout(connectWssn, 3000);
-//     };
-//
-//     videoFeedWebSocket.onerror = (error) => {
-//         console.error("WebSocket error (videoFeedWebSocket):", error);
-//         // videoFeedWebSocket.close(); // Optionally close to trigger reconnect
-//     };
-// }
 
 function connectWssn() {
     // Create the WebSocket
-    videoFeedWebSocket = new WebSocket('ws://192.168.0.63:8765/');
+    // videoFeedWebSocket = new WebSocket('ws://192.168.0.63:8765/');
+    videoFeedWebSocket = new WebSocket('ws://localhost:8765/');
 
     videoFeedWebSocket.onopen = () => {
         console.log("Connected to videoFeedWebSocket server (192.168.0.63:8765)");
@@ -209,7 +172,6 @@ function connectWssn() {
 
     videoFeedWebSocket.onmessage = (event) => {
         // Log the raw string
-        // console.log("Received message from server:", event.data);
 
         let data;
         try {
@@ -223,7 +185,6 @@ function connectWssn() {
         // If we successfully parsed a JSON object with "type"
         if (data && data.type === "welcome") {
             // We have system data
-            // console.log("Received welcome (system) message:", data);
 
             // Update your UI with system information
             document.getElementById("detection-unit-data").innerHTML = `
