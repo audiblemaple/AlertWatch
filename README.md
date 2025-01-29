@@ -57,5 +57,5 @@ The system comprises 2 parts:
 * My friends for pushing me and keeping me sane during this degree
   * Gilad Segal: [GitHub](https://github.com/gilseg10) | [LinkedIn ](https://www.linkedin.com/in/gilad-segal-4aa158267/)
   * Ron Shahar: [GitHub](https://github.com/Seth7171) | [LinkedIn ](https://www.linkedin.com/in/ron-shahar7171/)
-  * Nitzan maman 
+  * Nitzan maman: [GitHub](https://github.com/NitsanMaman) | [LinkedIn ](https://www.linkedin.com/in/nitsan-maman-a6b35a139/)
   * Elad Fischer: [GitHub](https://github.com/EladFis03) | [LinkedIn ](https://www.linkedin.com/in/elad-fisher-064101198/)
