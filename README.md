@@ -54,7 +54,7 @@ The system comprises 2 parts:
 # Special thanks
 * Shimon Faitelson (project curator): [LinkedIn ](https://il.linkedin.com/in/shimon-faitelson-22975813)
 * Mikhail Anikin (professional consultation): [GitHub](https://github.com/anikinmd) | [LinkedIn ](https://www.linkedin.com/in/mikhail-anikin/)
-* My friends for pushing me and keeping me sane during this project
+* My friends for pushing me and keeping me sane during this degree
   * Gilad Segal: [GitHub](https://github.com/gilseg10) | [LinkedIn ](https://www.linkedin.com/in/gilad-segal-4aa158267/)
   * Ron Shahar: [GitHub](https://github.com/Seth7171) | [LinkedIn ](https://www.linkedin.com/in/ron-shahar7171/)
   * Nitzan maman 
