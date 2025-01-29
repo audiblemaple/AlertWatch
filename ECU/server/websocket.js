@@ -46,7 +46,7 @@ let detectionUnitData = undefined;
 let videoFeedWebSocket;
 
 function connectVideoFeedWebSocket() {
-    videoFeedWebSocket = new WebSocket("ws://localhost:8765/");
+    videoFeedWebSocket = new WebSocket("ws://192.168.0.63:8765/");
 
     videoFeedWebSocket.onopen = () => {
         console.log("Connected to video feed WebSocket server (localhost:8765)");
@@ -61,18 +61,19 @@ function connectVideoFeedWebSocket() {
             return;
         }
 
-        // Store the latest frames (FIFO buffer)
-        if (videoBuffer.length >= VIDEO_BUFFER_LIMIT) {
-            videoBuffer.shift(); // Remove oldest frame if buffer is full
-        }
-        videoBuffer.push(data);
+        if (data.includes("welcome"))
+            return;
 
+        // Store the latest frames (FIFO buffer)
+        if (videoBuffer.length >= VIDEO_BUFFER_LIMIT)
+            videoBuffer.shift(); // Remove oldest frame if buffer is full
+        videoBuffer.push(data);
     };
 
     videoFeedWebSocket.onclose = () => {
         console.log("Disconnected from video feed WebSocket server. Reconnecting in 3 seconds...");
         setTimeout(() => {
-            videoFeedWebSocket = new WebSocket("ws://localhost:8765/");
+            videoFeedWebSocket = new WebSocket("ws://192.168.0.63:8765/");
         }, 3000);
     };
 
@@ -82,18 +83,20 @@ function connectVideoFeedWebSocket() {
 }
 
 /**
- * Save the last 30 seconds of video frames to an MP4 file.
+ * Save the last XX seconds of video frames to an MP4 file.
  */
 function saveVideo(filename = "saved_video.mp4") {
     if (videoBuffer.length === 0) {
         console.log("No frames to save!");
         return;
     }
+    let fullName = "Saved_videos";
+    fullName = `${fullName}/${filename}`;
 
-    console.log(`Saving ${videoBuffer.length} frames to ${filename}...`);
+    console.log(`Saving ${videoBuffer.length} frames to ${fullName}...`);
 
     // Define output directory and file path
-    const outputPath = join(__dirname, filename);
+    const outputPath = join(__dirname, fullName);
     const tempFramesDir = join(__dirname, "temp_frames");
 
     // Ensure the temp directory exists
@@ -103,10 +106,10 @@ function saveVideo(filename = "saved_video.mp4") {
 
     // Save frames as temporary images
     videoBuffer.forEach((frame, index) => {
-        console.log(frame)
         const filePath = join(tempFramesDir, `frame-${String(index).padStart(5, "0")}.jpg`);
-        const imageData = frame.split(",")[1]; // Remove "data:image/jpeg;base64,"
-        writeFileSync(filePath, Buffer.from(imageData, "base64"));
+        // const imageData = frame.split(",")[1]; // Remove "data:image/jpeg;base64,"
+        // writeFileSync(filePath, Buffer.from(imageData, "base64"));
+        writeFileSync(filePath, Buffer.from(frame, "base64"));
     });
 
     // Encode images to video using ffmpeg
@@ -243,9 +246,7 @@ async function handleClientMessage(ws, message, wss) {
 
             case "manual_user_confirmation":
             case "accelerate":
-                saveVideo();
-//                setCarDecelerating();
-                 setCarAccelerating();
+                setCarAccelerating();
                 break;
 
             case "alert": {
@@ -272,7 +273,6 @@ async function handleClientMessage(ws, message, wss) {
                         // and loop until user responds or alert is escalated
                         if (currentDriveObject.medium_alert_num > 0) {
                             await playSound(sounds.attentionTest);
-
                             try {
                                 // Wait for user confirmation in a loop
                                 while (true) {
@@ -317,7 +317,7 @@ async function handleClientMessage(ws, message, wss) {
                                         setCarDecelerating();
                                         const count = 120;
                                         let counter = 0;
-                                        while (carState.decelerating === true){
+                                        while (carState.decelerating === true || carState.stopped === true) {
                                             if (counter > count)
                                                 break
                                             await playSound(sounds.beep);
@@ -343,7 +343,7 @@ async function handleClientMessage(ws, message, wss) {
                         break;
 
                     default:
-                        return
+                        return;
                 }
                 break; // End of case "alert"
             }
@@ -355,6 +355,8 @@ async function handleClientMessage(ws, message, wss) {
 
         }
         locks.alert_lock = false;
+        const timestamp = Date.now(); // Unique timestamp
+        saveVideo(`video_${timestamp}.mp4`);
 
         ws.send(JSON.stringify(response));
     } catch (error) {

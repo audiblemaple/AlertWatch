@@ -62,8 +62,7 @@ function updateSpeed(speed) {
 let socket = null;
 
 function connectMainSocket() {
-    socket = new WebSocket("ws://localhost:5000");
-    // socket = new WebSocket("ws://192.168.0.63:5000");
+     socket = new WebSocket("ws://192.168.0.63:5000");
 
     socket.onopen = () => {
         console.log("Connected to WebSocket server (main).");
@@ -164,8 +163,7 @@ let videoFeedWebSocket = null;
 
 function connectWssn() {
     // Create the WebSocket
-    // videoFeedWebSocket = new WebSocket('ws://192.168.0.63:8765/');
-    videoFeedWebSocket = new WebSocket('ws://localhost:8765/');
+     videoFeedWebSocket = new WebSocket('ws://192.168.0.63:8765/');
 
     videoFeedWebSocket.onopen = () => {
         console.log("Connected to videoFeedWebSocket server (192.168.0.63:8765)");
@@ -185,8 +183,6 @@ function connectWssn() {
 
         // If we successfully parsed a JSON object with "type"
         if (data && data.type === "welcome") {
-            // We have system data
-
             // Update your UI with system information
             document.getElementById("detection-unit-data").innerHTML = `
                 <strong>Processor:</strong> ${data.systemData.processor || "Unknown"}<br><br>
@@ -214,8 +210,62 @@ function connectWssn() {
 }
 
 
+// ======================
+// Load the list of videos
+// ======================
+async function loadVideoList() {
+    try {
+        const response = await fetch("http://192.168.0.63:5000/api/videos");
+        if (!response.ok) {
+            throw new Error("Failed to fetch video list");
+        }
+        const videoFiles = await response.json();
+
+        const selector = document.getElementById("videoSelector");
+        selector.innerHTML = ""; // Clear anything there
+
+        // Populate <select> with returned video filenames
+        videoFiles.forEach(filename => {
+            const option = document.createElement("option");
+            option.value = filename;
+            option.textContent = filename;
+            selector.appendChild(option);
+        });
+        // If there's only one video, automatically select and call the function
+        if (videoFiles.length === 1) {
+            selector.value = videoFiles[0];
+            onVideoSelect();  // or however you're calling the event handler
+        }
+    } catch (err) {
+        console.error("Error loading video list:", err);
+    }
+}
+
+// ======================
+// When user selects a video
+// ======================
+function onVideoSelect() {
+    const videoName = document.getElementById("videoSelector").value;
+    // The <video> can be played directly if it’s served statically
+    const videoPlayer = document.getElementById("savedVideoPlayer");
+    // Build the video URL
+    videoPlayer.src = `/Saved_videos/${videoName}`;
+    videoPlayer.load();
+    loadVideoList().then(r => console.log("Video List loaded"));
+}
+
+// ======================
+// Event listeners
+// ======================
+document.addEventListener("DOMContentLoaded", () => {
+    loadVideoList().then(r => console.log("Video List loaded"));
+    // Automatically play when user picks from dropdown
+    document.getElementById("videoSelector").addEventListener("change", onVideoSelect);
+});
+
+
 // Call once on page load
-// connectWssn();
+ connectWssn();
 
 
 // let gauge = null;

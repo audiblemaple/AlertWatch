@@ -31,6 +31,7 @@ const express = require("express");
 
 /** Import path module for handling file and directory paths */
 const path = require("path");
+const {readdir} = require("node:fs");
 
 /**
  * @function startApp
@@ -50,6 +51,24 @@ const startApp = () => {
      */
     app.get("/", (req, res) => {
         res.sendFile(path.join(__dirname, "frontend", "index.html"));
+    });
+
+    // Statically serve your "Saved_videos" folder at the /Saved_videos URL
+    app.use("/Saved_videos", express.static(path.join(__dirname, "Saved_videos")));
+
+    // Endpoint to get the video file list
+    app.get("/api/videos", (req, res) => {
+        const videosDir = path.join(__dirname, "Saved_videos");
+        readdir(videosDir, (err, files) => {
+            if (err) {
+                return res.status(500).json({ error: "Error reading directory" });
+            }
+            // Filter for common video extensions only if you want
+            const videoFiles = files.filter(file =>
+                file.match(/\.(mp4|mov|avi|webm|mkv)$/i)
+            );
+            res.json(videoFiles);
+        });
     });
 
     /**

@@ -21,6 +21,22 @@
             <img id="video-frame" src="" alt="Video Stream"/>
         </div>
 
+        <div id="saved-videos-section" class="section">
+            <h2 class="header">Saved Videos</h2>
+
+            <!-- Dropdown menu to choose a video -->
+            <label for="videoSelector"></label><select id="videoSelector">
+                <option value="" disabled selected>-- Select a video --</option>
+            </select>
+
+            <!-- A button or automatically handle "onchange" -->
+            <!-- <button onclick="onVideoSelect()">Play Selected Video</button> -->
+
+            <!-- Video player -->
+            <br />
+            <video id="savedVideoPlayer" width="640" height="360" controls></video>
+        </div>
+
         <div id="ECU-unit-container" class="section">
             <h2 class="header" >ECU unit data</h2>
             <p id="ECU-unit-data"></p>

@@ -277,12 +277,11 @@ def postprocess_faces(outputs, pad_w, pad_h, score_threshold=0.67, nms_threshold
 
     # Adjust box position
     boxes[:, 0] -= 15
-    boxes[:, 2] -= 7  # shift right side left
+    # boxes[:, 1] -= 30
+    # boxes[:, 2] -= 7  # shift right side left
+    boxes[:, 3] += 15
 
-    # boxes[:, 0] += 10
-    # boxes[:, 1] -= 10
-    # boxes[:, 2] -= 15  # shift right side left
-    # boxes[:, 3] -= 10
+
 
 
     # Select the best bounding box
@@ -291,10 +290,10 @@ def postprocess_faces(outputs, pad_w, pad_h, score_threshold=0.67, nms_threshold
     best_score = scores[best_idx]
 
     # Optionally expand small bounding boxes
-    if (best_box[2] - best_box[0] < 70) or (best_box[3] - best_box[1] < 70):
-        best_box[0] = int(best_box[0] - (best_box[0] * 0.065))
+    if (best_box[2] - best_box[0] < 100) or (best_box[3] - best_box[1] < 100):
+        best_box[0] = int(best_box[0] - (best_box[0] * 0.025))
         best_box[1] = int(best_box[1] - (best_box[1] * 0.065))
-        best_box[2] = int(best_box[2] + (best_box[2] * 0.055))
+        best_box[2] = int(best_box[2] + (best_box[2] * 0.015))
         best_box[3] = int(best_box[3] + (best_box[3] * 0.10))
 
     return [(best_box[0], best_box[1], best_box[2], best_box[3], best_score)]

@@ -90,7 +90,7 @@ class AppState:
     # Analysis Parameters
     analysis_window: int = 40               # seconds (for blink rate + EAR over time)
     blink_rate_threshold: float = 100.0      # blinks per minute
-    prolonged_EAR_duration_threshold: float = 1.1  # seconds
+    prolonged_EAR_duration_threshold: float = 1.5  # seconds
 
     # Timestamps of blinks for rate calculation
     blink_timestamps: deque = field(default_factory=lambda: deque())

@@ -130,7 +130,7 @@ def display_fps(frame, fps, avg_fps) -> None:
 
     cv2.putText(frame, f"FPS / AVG FPS: {fps:.2f} / {avg_fps:.2f}", (10, 25),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 1, cv2.LINE_AA)
-    cv2.putText(frame, f"Timestamp: {timestamp.strftime('%S-%M_%H-%d-%m-%Y')}", (10, 470),
+    cv2.putText(frame, f"Timestamp: {timestamp.strftime('%H:%M:%S-%d.%m.%Y')}", (10, 470),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 1, cv2.LINE_AA)
 
 

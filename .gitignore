@@ -14,6 +14,7 @@ diagrams
 *.yaml
 *.npz
 *.hn
+*.mp4
 Production.tar.gz
 *acceleras_full_flow*
 whisper.cpp

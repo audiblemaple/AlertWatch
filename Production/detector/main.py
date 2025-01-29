@@ -167,8 +167,8 @@ def handle_faces(
             # If we haven't computed the baseline yet, do it now
             if state.baseline_ear is None and len(state.ear_values_baseline) > 0:
                 state.baseline_ear = np.mean(state.ear_values_baseline)
-                state.EAR_THRESHOLD = state.baseline_ear * 0.58
-                EAR_THRESHOLD = state.baseline_ear * 0.58
+                state.EAR_THRESHOLD = state.baseline_ear * 0.52
+                EAR_THRESHOLD = state.baseline_ear * 0.55
                 print(f"Baseline EAR computed: {state.baseline_ear:.3f}")
 
         # If baseline is ready, compare and display difference
@@ -390,28 +390,20 @@ Args:
     websocket (WebSocketServerProtocol): WebSocket connection object.
     path (str): The path of the WebSocket request.
 """
-# async def websocket_handler(websocket, path: str) -> None:q
-#     """Handle new WebSocket connection."""
-#     print("New client connected")
-#     try:
-#         await send_frames(websocket)
-#     except Exception as e:
-#         print(f"Client disconnected: {e}")
-
 async def websocket_handler(websocket, path: str) -> None:
     """Handle new WebSocket connection."""
     print("New client connected")
 
-    # 1. Gather system data
+    # Gather system data
     system_info = get_system_data()
 
-    # 2. Send system info as JSON with a 'type' field, so client can distinguish
+    # Send system info as JSON
     await websocket.send(json.dumps({
         "type": "welcome",
         "systemData": system_info
     }))
 
-    # 3. Now continuously send frames
+    # Continuously send frames
     try:
         await send_frames(websocket)
     except Exception as e:

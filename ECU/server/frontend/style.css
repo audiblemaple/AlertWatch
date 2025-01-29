@@ -153,3 +153,7 @@ p {
 #Detection-unit-container, #ECU-unit-container{
     justify-content: left;
 }
+
+#savedVideoPlayer{
+    border-radius: 15px;
+}

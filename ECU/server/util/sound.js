@@ -320,8 +320,6 @@ async function recordAudioWithFFmpeg(outputFilePath, durationInSeconds = 5, verb
     }
 }
 
-
-
 /**
  * Prompts the user for a confirmation of alertness by recording and analyzing audio.
  * @returns {Promise<number>} - User status based on their response.
@@ -329,7 +327,7 @@ async function recordAudioWithFFmpeg(outputFilePath, durationInSeconds = 5, verb
 async function askForUserConfirmation() {
     const userAudioPath = path.join(__dirname, "../assets/sounds", "userCollected.wav");
     // Record audio using ffmpeg
-    await recordAudioWithFFmpeg(userAudioPath, 3);
+    await recordAudioWithFFmpeg(userAudioPath, 2);
     // Get output from whisper-cli
     const rawOutput = await transcribeWithWhisper(userAudioPath);
     // Parse timestamps

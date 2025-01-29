@@ -67,7 +67,9 @@ const confirmationPhrases = [
     'i\'m fine',
     'i am fine',
     'i am good',
-    'i\'m good'
+    'good',
+    'ok',
+    'okay',
 ];
 
 /**
