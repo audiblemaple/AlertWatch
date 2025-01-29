@@ -12,7 +12,7 @@ In modern environments, whether in vehicles, offices, or other settings, maintai
 
 
 ## Developer documentation 
-[DEV docs](docs/index.html)
+[DEV docs](https://audiblemaple.github.io/AlertWatch/)
 
 ## Components
 The system comprises 2 parts:
@@ -52,5 +52,5 @@ The system comprises 2 parts:
 <br>
 
 # Special thanks
-* [Shimon Faitelson (project curator)](https://il.linkedin.com/in/shimon-faitelson-22975813)
-* Mikhail Anikin (professional consultation): [github](https://github.com/anikinmd) | [Linkedin](https://www.linkedin.com/in/mikhail-anikin/)
+* Shimon Faitelson (project curator): [LinkedIn ](https://il.linkedin.com/in/shimon-faitelson-22975813)
+* Mikhail Anikin (professional consultation): [GitHub](https://github.com/anikinmd) | [LinkedIn ](https://www.linkedin.com/in/mikhail-anikin/)
