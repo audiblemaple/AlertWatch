@@ -8,7 +8,7 @@ In modern environments, whether in vehicles, offices, or other settings, maintai
 * [Project Book part 1](Capstone_Project_Docs/Part_1/AlertWatch_phase_A.docx)
 * [Project Presentation part 1](Capstone_Project_Docs/Part_1/AlertWatch_phase_A.pptx)
 * [Project Book part 2](Capstone_Project_Docs/Part_2/AlertWatch_phase_B.docx)
-* [Project Poster part 2](Capstone_Project_Docs/Part_2/AlertWatch_phase_B.pdf) (give it a some time to load, this is a roll-up sized file)
+* [Project Poster part 2](Capstone_Project_Docs/Part_2/AlertWatch_phase_B.pdf) (give it time to load, its a big file
 
 
 ## Developer documentation 
