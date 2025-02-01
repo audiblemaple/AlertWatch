@@ -47,7 +47,7 @@ from .eyeController import  calculate_EAR
 from .websocketController import initialize_websocket
 from .videoController import save_video_sync
 
-WS_URL: str = "ws://192.168.0.63:5000"
+WS_URL: str = "ws://192.168.0.58:5000"
 RECONNECT_INTERVAL: int = 2
 
 def process_bounding_box(face, frame) -> tuple[int, int, int, int, float]:
@@ -129,15 +129,12 @@ def handle_blink_detection(left_eye, right_eye, state, ear_threshold, consec_fra
             if state.is_blinking:
                 blink_duration = now - state.current_blink_start
                 state.blink_durations.append(blink_duration)
-                # Consider removing prints in production
-                print(f"Blink {state.total_blinks}: Duration = {blink_duration:.3f} seconds")
 
         # Reset blinking state
         state.EAR_consec_frames = 0
         state.is_blinking = False
 
     return avg_ear
-
 
 def handle_drowsiness_detection(avg_EAR, state, frame) -> None:
     """
@@ -148,24 +145,23 @@ def handle_drowsiness_detection(avg_EAR, state, frame) -> None:
         state (AppState): The application state object.
         frame (np.ndarray): The video frame for annotation and display.
     """
-    # Call time.time() once
     current_time = time.time()
     # Get drowsiness once
     drowsy, reason = state.is_drowsy(avg_EAR, state.current_blink_start if state.is_blinking else 0)
 
     if drowsy:
-        ''' Handle Video Saving '''
-        with state.video_lock:
-            if (current_time - state.last_video_time) >= state.debounce_time_video:
-                timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-                output_filename = f"videos/blink_detected_{timestamp}.avi"
-                video_thread = threading.Thread(
-                    target=save_video_sync,
-                    args=(state.frame_buffer, state.fps, output_filename),
-                    daemon=True  # Use daemon=True so it won't block app exit
-                )
-                video_thread.start()
-                state.last_video_time = current_time
+        ''' Handle Video Saving (disabled) '''
+        # with state.video_lock:
+        #     if (current_time - state.last_video_time) >= state.debounce_time_video:
+        #         timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        #         output_filename = f"videos/blink_detected_{timestamp}.avi"
+        #         video_thread = threading.Thread(
+        #             target=save_video_sync,
+        #             args=(state.frame_buffer, state.fps, output_filename),
+        #             daemon=True  # Use daemon=True so it won't block app exit
+        #         )
+        #         video_thread.start()
+        #         state.last_video_time = current_time
 
         ''' Handle Alerts '''
         with state.alert_lock:

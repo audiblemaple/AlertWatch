@@ -277,7 +277,7 @@ def video_processing_loop(
         total_frames += 1
 
         # Append to buffer for the video saving
-        state.frame_buffer.append(frame)
+        # state.frame_buffer.append(frame)
 
         # Calculate instantaneous FPS
         fps_end_time = time.perf_counter()
@@ -428,7 +428,7 @@ def main() -> None:
     face_landmarks = f"../models/hailo{'15H' if platform.node() == 'hailo15' else '8'}/face-landmarks-detection.hef"
 
     state = AppState()
-    ensure_directory_exists('videos')
+    # ensure_directory_exists('videos')
 
     (hailo_inference,
      face_detection_input_shape,
@@ -438,11 +438,11 @@ def main() -> None:
     )
 
     # Estimate FPS if not known
-    estimated_fps = 60
-    state.fps = estimated_fps
-    state.buffer_size = int(estimated_fps * BUFFER_DURATION)
-    state.frame_buffer = deque(maxlen=state.buffer_size)
-    print(f"Estimated FPS: {state.fps:.2f}. Buffer size set to {state.buffer_size} frames.")
+    # estimated_fps = 60
+    # state.fps = estimated_fps
+    # state.buffer_size = int(estimated_fps * BUFFER_DURATION)
+    # state.frame_buffer = deque(maxlen=state.buffer_size)
+    # print(f"Estimated FPS: {state.fps:.2f}. Buffer size set to {state.buffer_size} frames.")
 
     # Run video processing in a separate thread
     video_thread = threading.Thread(

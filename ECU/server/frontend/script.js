@@ -163,7 +163,7 @@ let videoFeedWebSocket = null;
 
 function connectWssn() {
     // Create the WebSocket
-     videoFeedWebSocket = new WebSocket('ws://192.168.0.63:8765/');
+     videoFeedWebSocket = new WebSocket('ws://192.168.0.252:8765/');
 
     videoFeedWebSocket.onopen = () => {
         console.log("Connected to videoFeedWebSocket server (192.168.0.63:8765)");

@@ -74,7 +74,7 @@ class AppState:
     blink_counter: int = 0
     total_blinks: int = 0
     EAR_consec_frames: int = 0
-    frame_buffer: deque = field(default_factory=lambda: deque())
+    # frame_buffer: deque = field(default_factory=lambda: deque())
     buffer_size: int = 300
     fps: float = 0.0
     blink_durations: list = field(default_factory=list)  # Stores duration of each blink
@@ -98,10 +98,10 @@ class AppState:
     # Debounce Parameters
     last_alert_time: float = 0.0
     debounce_time_alert: float = 4
-    last_video_time: float = 0.0
-    debounce_time_video: float = 30
+    # last_video_time: float = 0.0
+    # debounce_time_video: float = 30
     alert_lock: threading.Lock = field(default_factory=threading.Lock)
-    video_lock: threading.Lock = field(default_factory=threading.Lock)
+    # video_lock: threading.Lock = field(default_factory=threading.Lock)
 
     # EAR measurements (time-stamped) for analyzing drowsiness
     ear_measurements: deque = field(default_factory=lambda: deque())
