@@ -1,5 +1,10 @@
 # AlertWatch
 <img src="Capstone_Project_Docs/Banner.png" alt="AlertWatch Banner">
+<br>
+<video width="848" height="480" controls>
+  <source src="Capstone_Project_Docs/Part_2/AlertWatch_phase_B.mp4" type="video/mp4">
+  Browser does not support the video tag.
+</video>
 
 ## Abstract
 In modern environments, whether in vehicles, offices, or other settings, maintaining alertness and preventing fatigue-related incidents has become a critical concern. "AlertWatch" presents an innovative solution utilizing advanced computer vision and hardware to monitor individuals and detect signs of drowsiness in real-time. This project leverages facial recognition and facial landmark detection to continuously assess the alertness levels of a person. Upon detecting signs of drowsiness, "AlertWatch" triggers immediate alerts to prevent potential accidents, lapses in productivity or even security concerns. This paper details the development process of "AlertWatch," focusing on its implementation of real-time monitoring through cameras and software algorithms, as well as outlining the development process and hardware options. "AlertWatch" enhances safety and efficiency and sets new standards for proactive alertness management through technology.
