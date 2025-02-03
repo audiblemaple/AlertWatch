@@ -1,8 +1,6 @@
 # AlertWatch
 <img src="Capstone_Project_Docs/Banner.png" alt="AlertWatch Banner">
 
-https://github.com/audiblemaple/AlertWatch/blob/main/Capstone_Project_Docs/Part_2/AlertWatch_phase_B.mp4
-
 ## Abstract
 In modern environments, whether in vehicles, offices, or other settings, maintaining alertness and preventing fatigue-related incidents has become a critical concern. "AlertWatch" presents an innovative solution utilizing advanced computer vision and hardware to monitor individuals and detect signs of drowsiness in real-time. This project leverages facial recognition and facial landmark detection to continuously assess the alertness levels of a person. Upon detecting signs of drowsiness, "AlertWatch" triggers immediate alerts to prevent potential accidents, lapses in productivity or even security concerns. This paper details the development process of "AlertWatch," focusing on its implementation of real-time monitoring through cameras and software algorithms, as well as outlining the development process and hardware options. "AlertWatch" enhances safety and efficiency and sets new standards for proactive alertness management through technology.
 
@@ -10,7 +8,8 @@ In modern environments, whether in vehicles, offices, or other settings, maintai
 * [Project Book part 1](Capstone_Project_Docs/Part_1/AlertWatch_phase_A.docx)
 * [Project Presentation part 1](Capstone_Project_Docs/Part_1/AlertWatch_phase_A.pptx)
 * [Project Book part 2](Capstone_Project_Docs/Part_2/AlertWatch_phase_B.docx)
-* [Project Poster part 2](Capstone_Project_Docs/Part_2/AlertWatch_phase_B.pdf) (give it time to load, its a big file
+* [Project Poster part 2](Capstone_Project_Docs/Part_2/AlertWatch_phase_B.pdf) (give it time to load, it's a big file)
+* [Project Video part 2](Capstone_Project_Docs/Part_2/AlertWatch_phase_B.mp4)
 
 
 ## Developer documentation 
