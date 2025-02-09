@@ -97,7 +97,7 @@ FRAMES_WITH_NO_FACE: int = 0
 BUFFER_DURATION: int = 30  # seconds
 
 ''' Frames to skip for face detection '''
-FRAMES_TO_SKIP: int = 2
+FRAMES_TO_SKIP: int = 3
 
 ''' The face to store when skipping frames '''
 FACES: int | None = None
@@ -121,12 +121,104 @@ Args:
     state (AppState): Application state for tracking blink and drowsiness info.
     tensors (list): List to store face-related data for debugging or analysis.
 """
+# def handle_faces(
+#     faces, frame, hailo_inference, face_land_output_name,
+#     face_landmarks_input_shape, all_landmarks, state: AppState, tensors
+# ) -> None:
+#     global EAR_THRESHOLD
+#     """Handle detected faces: run landmark inference, blink, drowsiness detection."""
+#     x1, y1, x2, y2, score = faces[0]
+#     draw_bounding_box(frame, score, (x1, y1), (x2, y2))
+#
+#     preprocessed_face, adjusted_bbox = preprocess_face_landmarks(
+#         frame, (x1, y1, x2, y2), face_landmarks_input_shape
+#     )
+#     if preprocessed_face is None or preprocessed_face.size != 50176:
+#         return
+#
+#     # Run Landmark Inference
+#     landmarks = run_landmark_inference(
+#         hailo_inference, preprocessed_face, face_land_output_name, CLASS_NUM
+#     )
+#     if landmarks is None:
+#         return
+#
+#     try:
+#         adjusted_landmarks = adjust_landmarks(
+#             landmarks, (x1, y1, x2 - x1, y2 - y1)
+#         )
+#         all_landmarks.append(adjusted_landmarks)
+#
+#         # Blink Detection
+#         left_eye = adjusted_landmarks[42:48]
+#         right_eye = adjusted_landmarks[36:42]
+#         avg_EAR = handle_blink_detection(
+#             left_eye, right_eye, state, EAR_THRESHOLD, CONSEC_FRAMES
+#         )
+#         state.add_ear_measurement(avg_EAR)
+#
+#         # Get first minute measurement for the EAR values
+#         elapsed = time.time() - state.start_time
+#         if elapsed < 90:
+#             # Collect EAR data for baseline calculation
+#             state.ear_values_baseline.append(avg_EAR)
+#         else:
+#             # If we haven't computed the baseline yet, do it now...
+#             if state.baseline_ear is None and len(state.ear_values_baseline) > 0:
+#                 state.baseline_ear = np.mean(state.ear_values_baseline)
+#                 state.EAR_THRESHOLD = state.baseline_ear * 0.52
+#                 EAR_THRESHOLD = state.baseline_ear * 0.55
+#                 print(f"Baseline EAR computed: {state.baseline_ear:.3f}")
+#
+#         # If baseline is ready, compare and display difference
+#         if state.baseline_ear is not None:
+#             ear_diff = avg_EAR - state.baseline_ear
+#             cv2.putText(
+#                 frame, f"Diff from baseline: {ear_diff:.2f}",
+#                 (10, 75),
+#                 cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 1, cv2.LINE_AA
+#             )
+#
+#         # Display EAR
+#         baseline_display = f"{state.baseline_ear:.2f}" if state.baseline_ear is not None else "N/A"
+#
+#         cv2.putText(
+#             frame,
+#             f"EAR / Baseline EAR: {avg_EAR:.2f} / {baseline_display}",
+#             (10, 50),
+#             cv2.FONT_HERSHEY_SIMPLEX,
+#             0.7,  # font scale
+#             (100, 250, 100),  # color
+#             1,  # thickness
+#             cv2.LINE_AA
+#         )
+#
+#         # Drowsiness Detection
+#         handle_drowsiness_detection(avg_EAR, state, frame)
+#
+#     except ValueError:
+#         return
+#     except Exception as e:
+#         # Handle unexpected exceptions
+#         print(f"Error in landmark processing: {e}")
+#         return
+#
+#     # Store extra data if needed
+#     tensors.append({
+#         'x1': x1, 'y1': y1, 'x2': x2, 'y2': y2,
+#         'score': float(score)
+#     })
+
 def handle_faces(
     faces, frame, hailo_inference, face_land_output_name,
     face_landmarks_input_shape, all_landmarks, state: AppState, tensors
 ) -> None:
-    global EAR_THRESHOLD
-    """Handle detected faces: run landmark inference, blink, drowsiness detection."""
+    """
+    Handle detected faces: run landmark inference, blink, drowsiness detection.
+    """
+    # Instead of global EAR_THRESHOLD, start with the global default
+    ear_threshold = EAR_THRESHOLD
+
     x1, y1, x2, y2, score = faces[0]
     draw_bounding_box(frame, score, (x1, y1), (x2, y2))
 
@@ -134,7 +226,6 @@ def handle_faces(
         frame, (x1, y1, x2, y2), face_landmarks_input_shape
     )
     if preprocessed_face is None or preprocessed_face.size != 50176:
-        # Avoid printing inside hot loop if possible
         return
 
     # Run Landmark Inference
@@ -153,25 +244,28 @@ def handle_faces(
         # Blink Detection
         left_eye = adjusted_landmarks[42:48]
         right_eye = adjusted_landmarks[36:42]
+
+        # Use ear_threshold when calling handle_blink_detection
         avg_EAR = handle_blink_detection(
-            left_eye, right_eye, state, EAR_THRESHOLD, CONSEC_FRAMES
+            left_eye, right_eye, state, ear_threshold, CONSEC_FRAMES
         )
         state.add_ear_measurement(avg_EAR)
 
-        # Get first minute measurement for the EAR values
+        # Baseline handling
         elapsed = time.time() - state.start_time
-        if elapsed < 90:
+        if elapsed < 120:
             # Collect EAR data for baseline calculation
             state.ear_values_baseline.append(avg_EAR)
         else:
-            # If we haven't computed the baseline yet, do it now
+            # Compute baseline if needed
             if state.baseline_ear is None and len(state.ear_values_baseline) > 0:
                 state.baseline_ear = np.mean(state.ear_values_baseline)
+                # Update thresholds in state
                 state.EAR_THRESHOLD = state.baseline_ear * 0.52
-                EAR_THRESHOLD = state.baseline_ear * 0.55
+                state.ear_measurements.clear()
                 print(f"Baseline EAR computed: {state.baseline_ear:.3f}")
 
-        # If baseline is ready, compare and display difference
+        # Display the difference from baseline if we have one
         if state.baseline_ear is not None:
             ear_diff = avg_EAR - state.baseline_ear
             cv2.putText(
@@ -180,9 +274,8 @@ def handle_faces(
                 cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 1, cv2.LINE_AA
             )
 
-        # Display EAR
+        # Display EAR and baseline
         baseline_display = f"{state.baseline_ear:.2f}" if state.baseline_ear is not None else "N/A"
-
         cv2.putText(
             frame,
             f"EAR / Baseline EAR: {avg_EAR:.2f} / {baseline_display}",
@@ -194,13 +287,12 @@ def handle_faces(
             cv2.LINE_AA
         )
 
-        # Drowsiness Detection
+        # Drowsiness Detection (pass the same ear_threshold or just avg_EAR)
         handle_drowsiness_detection(avg_EAR, state, frame)
 
     except ValueError:
         return
     except Exception as e:
-        # Handle unexpected exceptions
         print(f"Error in landmark processing: {e}")
         return
 
@@ -250,11 +342,102 @@ Args:
     face_land_output_name (str): Output name for face landmarks model.
     state (AppState): Application state for tracking application metrics.
 """
+# def video_processing_loop(
+#     hailo_inference, face_detection_input_shape, face_landmarks_input_shape,
+#     face_land_output_name, state: AppState
+# ):
+#     """Continually capture frames, run face detection/landmarks, and manage display."""
+#     global latest_frame
+#     global FRAMES_WITH_NO_FACE
+#
+#     cap = init_cv_cap(640, 480, 60)
+#     if cap is None or not cap.isOpened():
+#         print("Error: Could not open camera.")
+#         return
+#
+#     fps_start_time = time.perf_counter()
+#     total_start_time = fps_start_time
+#     total_frames = 0
+#     face_buff = None
+#
+#     while True:
+#         ret, frame = cap.read()
+#         if not ret:
+#             print("Error: Failed to capture image.")
+#             break
+#
+#         total_frames += 1
+#
+#         # Append to buffer for the video saving
+#         # state.frame_buffer.append(frame)
+#
+#         # Calculate instantaneous FPS
+#         fps_end_time = time.perf_counter()
+#         time_diff = fps_end_time - fps_start_time
+#         total_time = fps_end_time - total_start_time
+#         # Update state.fps only if time_diff > 0
+#         if time_diff > 0:
+#             state.fps = 1.0 / time_diff
+#         fps_start_time = fps_end_time
+#
+#         # Average FPS
+#         avg_fps = total_frames / total_time if total_time > 0 else 0.0
+#
+#         # Run face detection every FRAMES_TO_SKIP frames
+#         if total_frames % FRAMES_TO_SKIP == 0:
+#             face = get_faces(frame, hailo_inference, face_detection_input_shape)
+#             if face is not None:
+#                 face_buff = face
+#         else:
+#             face = face_buff
+#
+#         # If no face detected
+#         if not face:
+#             with lock:
+#                 latest_frame = frame
+#             if platform.node() != 'hailo15':
+#                 cv2.imshow('Webcam Face Landmarks', frame)
+#                 if cv2.waitKey(1) & 0xFF == ord('q'):
+#                     print("Quitting...")
+#                     break
+#             continue
+#
+#         # If face is found, run landmark inference
+#         all_landmarks = []
+#         tensors = []
+#         handle_faces(
+#             face, frame, hailo_inference, face_land_output_name,
+#             face_landmarks_input_shape, all_landmarks, state, tensors
+#         )
+#
+#         # Draw landmarks, display FPS & blink info
+#         if all_landmarks:
+#             draw_landmarks(frame, all_landmarks)
+#
+#         display_fps(frame, state.fps, avg_fps)
+#         display_blink_info(
+#             frame, state.blink_counter, state.total_blinks, state.blink_durations
+#         )
+#
+#         # Show the frame or do nothing
+#         if platform.node() != 'hailo15':
+#             cv2.imshow('Webcam Face Landmarks', frame)
+#             if cv2.waitKey(1) & 0xFF == ord('q'):
+#                 print("Quitting...")
+#                 break
+#
+#         # Update latest_frame for the WS server
+#         with lock:
+#             latest_frame = frame
+#
+#     cap.release()
+#     cv2.destroyAllWindows()
+
+
 def video_processing_loop(
     hailo_inference, face_detection_input_shape, face_landmarks_input_shape,
     face_land_output_name, state: AppState
 ):
-    """Continually capture frames, run face detection/landmarks, and manage display."""
     global latest_frame
     global FRAMES_WITH_NO_FACE
 
@@ -266,7 +449,8 @@ def video_processing_loop(
     fps_start_time = time.perf_counter()
     total_start_time = fps_start_time
     total_frames = 0
-    face_buff = None
+
+    face_buff = None  # Holds the last detected face; None if no face
 
     while True:
         ret, frame = cap.read()
@@ -276,30 +460,45 @@ def video_processing_loop(
 
         total_frames += 1
 
-        # Append to buffer for the video saving
-        # state.frame_buffer.append(frame)
-
-        # Calculate instantaneous FPS
+        # --- FPS Calculation (same as your original code) ---
         fps_end_time = time.perf_counter()
         time_diff = fps_end_time - fps_start_time
         total_time = fps_end_time - total_start_time
-        # Update state.fps only if time_diff > 0
         if time_diff > 0:
             state.fps = 1.0 / time_diff
         fps_start_time = fps_end_time
-
-        # Average FPS
         avg_fps = total_frames / total_time if total_time > 0 else 0.0
 
-        # Run face detection every FRAMES_TO_SKIP frames
-        if total_frames % FRAMES_TO_SKIP == 0:
+        # ---------------------------------------------------
+        # 1) Decide whether to run face detection
+        #
+        #    - If we currently have no face in the buffer (face_buff is None),
+        #      run detection every frame (don't skip).
+        #    - If we do have a face in the buffer, only run detection every
+        #      FRAMES_TO_SKIP frames (to save computation).
+        # ---------------------------------------------------
+        run_detection_this_frame = False
+        if face_buff is None:
+            # No face in buffer; try detecting every frame
+            run_detection_this_frame = True
+        else:
+            # We do have a face in buffer; only detect on intervals
+            if total_frames % FRAMES_TO_SKIP == 0:
+                run_detection_this_frame = True
+
+        if run_detection_this_frame:
             face = get_faces(frame, hailo_inference, face_detection_input_shape)
             if face is not None:
-                face_buff = face
+                face_buff = face  # Update buffer
+            else:
+                face_buff = None  # Clear buffer if no face detected
         else:
-            face = face_buff
+            face = face_buff  # Re-use the previously detected face
 
-        # If no face detected
+        # ---------------------------------------------------
+        # 2) If after that logic we have NO face, show frame
+        #    and continue (i.e. skip landmarks).
+        # ---------------------------------------------------
         if not face:
             with lock:
                 latest_frame = frame
@@ -310,7 +509,6 @@ def video_processing_loop(
                     break
             continue
 
-        # If face is found, run landmark inference
         all_landmarks = []
         tensors = []
         handle_faces(
@@ -318,28 +516,25 @@ def video_processing_loop(
             face_landmarks_input_shape, all_landmarks, state, tensors
         )
 
-        # Draw landmarks, display FPS & blink info
+        # Draw landmarks
         if all_landmarks:
             draw_landmarks(frame, all_landmarks)
 
         display_fps(frame, state.fps, avg_fps)
-        display_blink_info(
-            frame, state.blink_counter, state.total_blinks, state.blink_durations
-        )
+        display_blink_info(frame, state.blink_counter, state.total_blinks, state.blink_durations)
 
-        # Show the frame or do nothing
         if platform.node() != 'hailo15':
             cv2.imshow('Webcam Face Landmarks', frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 print("Quitting...")
                 break
 
-        # Update latest_frame for the WS server
         with lock:
             latest_frame = frame
 
     cap.release()
     cv2.destroyAllWindows()
+
 
 
 """

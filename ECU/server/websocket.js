@@ -6,7 +6,7 @@
  */
 
 /** Extract environment variables */
-const {maxSpeed} = process.env;
+const {maxSpeed, detector_IP} = process.env;
 
 /** Import WebSocket library */
 const WebSocket = require("ws");
@@ -46,47 +46,40 @@ let detectionUnitData = undefined;
 let videoFeedWebSocket;
 
 function connectVideoFeedWebSocket() {
-  console.log("Attempting to connect to WebSocket: ws://192.168.0.252:8765/");
+    videoFeedWebSocket = new WebSocket(`ws://${detector_IP}:8765/`);
 
-  // Create a new WebSocket instance
-  const ws = new WebSocket("ws://192.168.0.252:8765/");
+    videoFeedWebSocket.onopen = () => {
+        console.log(`Connected to video feed WebSocket server (ws://${detector_IP}:8765/)`);
+    };
 
-  // When the connection is opened
-  ws.on('open', () => {
-    console.log("Connected to video feed WebSocket server (192.168.0.252:8765)");
-  });
+    videoFeedWebSocket.onmessage = (event) => {
+        let data;
+        try {
+            data = event.data;
+        } catch (e) {
+            console.error("Error receiving frame", e);
+            return;
+        }
 
-  // When a message is received
-  ws.on('message', (data) => {
-    let data;
-    try {
-        data = event.data;
-    } catch (e) {
-        console.error("Error receiving frame", e);
-        return;
-    }
+        if (data.includes("welcome"))
+            return;
 
-    if (data.includes("welcome"))
-        return;
+        // Store the latest frames (FIFO buffer)
+        if (videoBuffer.length >= VIDEO_BUFFER_LIMIT)
+            videoBuffer.shift(); // Remove oldest frame if buffer is full
+        videoBuffer.push(data);
+    };
 
-    // Store the latest frames (FIFO buffer)
-    if (videoBuffer.length >= VIDEO_BUFFER_LIMIT)
-        videoBuffer.shift(); // Remove oldest frame if buffer is full
-    videoBuffer.push(data);
-  });
+    videoFeedWebSocket.onclose = () => {
+        console.log("Disconnected from video feed WebSocket server. Reconnecting in 3 seconds...");
+        setTimeout(() => {
+            connectVideoFeedWebSocket();
+        }, 3000);
+    };
 
-  // If the WebSocket connection closes for any reason
-  ws.on('close', () => {
-    console.log("Disconnected from video feed WebSocket server. Reconnecting in 3 seconds...");
-    setTimeout(connectVideoFeedWebSocket, 3000);
-  });
-
-  ws.on('error', (error) => {
-    console.error("WebSocket error (video feed):", error);
-  });
-
-  // Keep a reference if Ill need it elsewhere
-  videoFeedWebSocket = ws;
+    videoFeedWebSocket.onerror = (error) => {
+        console.error("WebSocket error (video feed):", error);
+    };
 }
 
 /**
