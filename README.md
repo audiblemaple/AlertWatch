@@ -57,7 +57,8 @@ The system comprises 2 parts:
 * Shimon Faitelson (project curator): [LinkedIn ](https://il.linkedin.com/in/shimon-faitelson-22975813)
 * Mikhail Anikin (professional consultation): [GitHub](https://github.com/anikinmd) | [LinkedIn ](https://www.linkedin.com/in/mikhail-anikin/)
 * My friends for pushing me and keeping me sane during this degree
-  * Gilad Segal: [GitHub](https://github.com/gilseg10) | [LinkedIn ](https://www.linkedin.com/in/gilad-segal-4aa158267/)
-  * Ron Shahar: [GitHub](https://github.com/Seth7171) | [LinkedIn ](https://www.linkedin.com/in/ron-shahar7171/)
-  * Nitzan maman: [GitHub](https://github.com/NitsanMaman) | [LinkedIn ](https://www.linkedin.com/in/nitsan-maman-a6b35a139/)
-  * Elad Fischer: [GitHub](https://github.com/EladFis03) | [LinkedIn ](https://www.linkedin.com/in/elad-fisher-064101198/)
+  * Gilad Segal:   [GitHub](https://github.com/gilseg10) | [LinkedIn ](https://www.linkedin.com/in/gilad-segal-4aa158267/)
+  * Ron Shahar:    [GitHub](https://github.com/Seth7171) | [LinkedIn ](https://www.linkedin.com/in/ron-shahar7171/)
+  * Nitzan maman:  [GitHub](https://github.com/NitsanMaman) | [LinkedIn ](https://www.linkedin.com/in/nitsan-maman-a6b35a139/)
+  * Elad Fischer:  [GitHub](https://github.com/EladFis03) | [LinkedIn ](https://www.linkedin.com/in/elad-fisher-064101198/)
+  * Amir Mishayev: [Github](https://github.com/amir3x0) | [LinkedIn](https://www.linkedin.com/in/amir-mishayev/)
