@@ -20,9 +20,8 @@ In modern environments, whether in vehicles, offices, or other settings, maintai
 The system comprises 2 parts:
 * [ECU / Management unit (Bedrock)](#ecu--management-unit)
 * [Detection unit (Hailo 15H)](#detection-unit)
-<br>
 <img src="Capstone_Project_Docs/Part_2/Connection_Diagram.png" alt="AlertWatch Banner">
-
+<br>
 
 ## ECU / Management unit
 ### Software
